@@ -128,19 +128,28 @@ export default function AnalyticsPage() {
               <PieChart>
                 <Pie
                   data={predPieData}
-                  cx="50%" cy="50%"
-                  innerRadius={60} outerRadius={100}
+                  cx="50%" cy="45%"
+                  innerRadius={60} outerRadius={85}
                   paddingAngle={4}
                   dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  labelLine={false}
                 >
                   {predPieData.map((entry, i) => (
                     <Cell key={i} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
-                <Legend />
+                <Legend
+                  verticalAlign="bottom"
+                  iconType="circle"
+                  iconSize={8}
+                  wrapperStyle={{ paddingTop: '12px' }}
+                  formatter={(value) => {
+                    const item = predPieData.find((d) => d.name === value)
+                    const total = predPieData.reduce((acc, cur) => acc + cur.value, 0)
+                    const pct = total > 0 && item ? Math.round((item.value / total) * 100) : 0
+                    return <span className="text-xs font-medium text-gray-700 ml-1">{value} ({pct}%)</span>
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           )}

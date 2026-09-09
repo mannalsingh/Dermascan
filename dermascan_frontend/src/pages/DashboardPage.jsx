@@ -63,7 +63,7 @@ export default function DashboardPage() {
       
       <div className="mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-          {greeting()}, {user?.name?.split(' ')[0] || 'there'} 👋
+          {greeting()}, {user?.name || 'there'} 👋
         </h1>
         <p className="text-gray-500 mt-1">Here's your screening overview</p>
       </div>

@@ -19,10 +19,7 @@ class GradCAMService:
             raise ValueError(f'Could not read image at {image_path}')
         
         h, w = img.shape[:2]
-        print(f"\n[Lesion Localization Diagnostics]")
-        print(f"  Image Dimensions: {w}x{h}")
 
-        # Extract BGR channels for Red-Green difference calculation
         b_ch, g_ch, r_ch = cv2.split(img)
         r_ch = r_ch.astype(float)
         g_ch = g_ch.astype(float)
@@ -30,7 +27,6 @@ class GradCAMService:
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         _, s_ch, v_ch = cv2.split(hsv)
         
-        # Hybrid formula: Saturation * (255 - Value * 0.5) * (1 + (Red - Green) / 50)
         saliency = s_ch.astype(float) * (255.0 - v_ch.astype(float) * 0.5) * (1.0 + np.maximum(0.0, r_ch - g_ch) / 50.0)
         sal_min, sal_max = np.min(saliency), np.max(saliency)
 
@@ -62,13 +58,10 @@ class GradCAMService:
                     if area < 10:
                         continue
                     
-                    # Ignore contours that are too large (more than 15% of the image)
                     if area > (h * w * 0.15):
                         continue
                         
                     bx, by, bw, bh = cv2.boundingRect(c)
-                    # Ignore contours that touch the image boundaries (e.g., sleeves, backgrounds, hair)
-                    # We also check if it touches the zeroed-out border boundary
                     if bx <= (border_size + 2) or by <= (border_size + 2) or \
                        (bx + bw) >= (w - border_size - 2) or (by + bh) >= (h - border_size - 2):
                         continue
@@ -93,10 +86,6 @@ class GradCAMService:
                 all_candidates.sort(key=lambda x: x[0], reverse=True)
                 best_score, center_x, center_y, bx, by, bw, bh, thresh_val, idx = all_candidates[0]
                 found_center = True
-                print(f"  Selected candidate: index={idx}, score={best_score:.2f}, center=({center_x}, {center_y}), bbox=({bx}, {by}, {bw}, {bh}), thresh={thresh_val}")
-                print(f"  Top candidates:")
-                for c_score, c_x, c_y, c_bx, c_by, c_bw, c_bh, c_t, c_idx in all_candidates[:5]:
-                    print(f"    - Cand {c_idx} (thresh {c_t}): score={c_score:.2f}, center=({c_x}, {c_y}), bbox=({c_bx}, {c_by}, {c_bw}, {c_bh})")
             
             if found_center:
                 for t in [100, 75, 50]:
@@ -113,14 +102,9 @@ class GradCAMService:
                             radius_x = min(radius_x, int(min(h, w) * 0.20))
                             radius_y = min(radius_y, int(min(h, w) * 0.20))
                             found_spread = True
-                            print(f"  Spread bounding box at thresh={t}: ({x}, {y}, {cw}, {ch}) -> Radius: ({radius_x}, {radius_y})")
                             break
                     if found_spread:
                         break
-        else:
-            print("  Image is uniform/flat color. Using image center default.")
-
-        print(f"  Final Selected Region: Centroid=({center_x}, {center_y}), Radius X={radius_x}, Radius Y={radius_y}")
 
         x_indices, y_indices = np.meshgrid(np.arange(w), np.arange(h))
         rx_val = radius_x * 1.2

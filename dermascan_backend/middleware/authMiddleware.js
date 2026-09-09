@@ -30,16 +30,22 @@ const protect = async (req, res, next) => {
         mongoose.connection.readyState !== 1 ||
         (decoded.id && typeof decoded.id === 'string' && (
           decoded.id.startsWith('mock_user_') ||
+          decoded.id.startsWith('user_') ||
           decoded.id.startsWith('local_') ||
           decoded.id.startsWith('google')
         ))
       ) {
+        const fallbackStore = require('../data/fallbackStore');
+        const userFromStore = (decoded.email && fallbackStore.getUserByEmail(decoded.email)) || {};
+        const userName = decoded.name || userFromStore.name || 'User';
+        const userEmail = decoded.email || userFromStore.email || '';
+
         req.user = {
           _id: decoded.id,
           id: decoded.id,
-          name: 'Demo User',
-          email: 'demo@example.com',
-          role: 'user'
+          name: userName,
+          email: userEmail,
+          role: decoded.role || userFromStore.role || 'user'
         };
         return next();
       }
