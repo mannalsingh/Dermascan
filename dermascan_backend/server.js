@@ -44,10 +44,8 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
-  console.error(err.stack);
   res.status(500).json({ success: false, message: 'Internal server error', error: err.message });
 });
 
 app.listen(PORT, () => {
-  console.log(`DermaScan AI backend running on port ${PORT}`);
 });

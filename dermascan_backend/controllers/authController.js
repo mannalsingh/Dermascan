@@ -24,7 +24,6 @@ exports.register = async (req, res, next) => {
     const mongoose = require('mongoose');
 
     if (mongoose.connection.readyState !== 1) {
-      console.warn('⚠️ Database offline. Using local fallback store.');
       const existing = fallbackStore.getUserByEmail(email);
       if (existing) {
         return res.status(400).json({ success: false, message: 'User already exists' });
@@ -93,7 +92,6 @@ exports.login = async (req, res, next) => {
 
     const mongoose = require('mongoose');
     if (mongoose.connection.readyState !== 1) {
-      console.warn('⚠️ Database offline. Checking local fallback store.');
       let existingUser = fallbackStore.getUserByEmail(email);
 
       if (existingUser) {
@@ -168,7 +166,6 @@ exports.googleLogin = async (req, res, next) => {
     const mongoose = require('mongoose');
 
     if (mongoose.connection.readyState !== 1) {
-      console.warn('⚠️ Database offline. Saving Google user in local fallback store.');
       let existingUser = fallbackStore.getUserByEmail(email);
       if (!existingUser) {
         existingUser = fallbackStore.saveUser({

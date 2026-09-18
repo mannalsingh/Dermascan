@@ -6,19 +6,21 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import { User, Mail, Phone, MapPin, Calendar, Save, CheckCircle, AlertTriangle } from 'lucide-react'
 
 export default function ProfilePage() {
-  const { user, refreshProfile } = useAuth()
+  const { user, saveAuth, token } = useAuth()
   const [profile, setProfile] = useState(null)
-  const [form, setForm] = useState({ phone: '', address: '', gender: '', date_of_birth: '' })
+  const [form, setForm] = useState({ name: '', phone: '', address: '', gender: '', date_of_birth: '' })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState(null) 
+  const [message, setMessage] = useState(null)
 
   useEffect(() => {
     userAPI.getProfile()
       .then((r) => {
         const p = r.data?.data?.profile || {}
+        const u = r.data?.data?.user || {}
         setProfile(p)
         setForm({
+          name:          u.name || user?.name || '',
           phone:         p.phone || '',
           address:       p.address || '',
           gender:        p.gender || '',
@@ -39,8 +41,12 @@ export default function ProfilePage() {
     try {
       setSaving(true)
       setMessage(null)
-      await userAPI.updateProfile(form)
-      await refreshProfile()
+      const res = await userAPI.updateProfile(form)
+      const updatedUser = res.data?.data?.user
+      if (updatedUser && token) {
+        const merged = { ...user, ...updatedUser }
+        saveAuth(token, merged)
+      }
       setMessage({ type: 'success', text: 'Profile updated successfully!' })
     } catch {
       setMessage({ type: 'error', text: 'Failed to update profile. Please try again.' })
@@ -71,11 +77,11 @@ export default function ProfilePage() {
           <div className="flex items-center gap-5">
             <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
               <span className="text-3xl font-bold text-blue-700">
-                {user?.name?.[0]?.toUpperCase() || 'U'}
+                {(form.name || user?.name)?.[0]?.toUpperCase() || 'U'}
               </span>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">{user?.name || 'User'}</h2>
+              <h2 className="text-xl font-bold text-gray-900">{form.name || user?.name || 'User'}</h2>
               <div className="flex items-center gap-1.5 text-gray-500 mt-1">
                 <Mail className="h-4 w-4" />
                 <span className="text-sm">{user?.email || ''}</span>
@@ -105,7 +111,18 @@ export default function ProfilePage() {
           )}
 
           <form onSubmit={handleSave} className="space-y-5">
-            
+
+            <div>
+              <label className="label" htmlFor="name">
+                <User className="inline h-3.5 w-3.5 mr-1" />Full Name
+              </label>
+              <input
+                id="name" name="name" type="text"
+                value={form.name} onChange={handleChange}
+                className="input-field" placeholder="Your full name"
+              />
+            </div>
+
             <div>
               <label className="label" htmlFor="phone">
                 <Phone className="inline h-3.5 w-3.5 mr-1" />Phone number
@@ -172,12 +189,16 @@ export default function ProfilePage() {
           <h3 className="font-semibold text-gray-700 mb-3 text-sm">Account Information</h3>
           <div className="space-y-2 text-sm text-gray-500">
             <div className="flex justify-between">
-              <span>Account ID</span>
-              <span className="font-mono text-xs">{String(user?.id || '').slice(0, 16)}…</span>
+              <span>Email</span>
+              <span className="text-xs">{user?.email || '—'}</span>
             </div>
             <div className="flex justify-between">
               <span>Role</span>
               <span className="capitalize">{user?.role || 'user'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Account ID</span>
+              <span className="font-mono text-xs">{String(user?.id || '').slice(0, 16)}…</span>
             </div>
           </div>
         </div>
@@ -185,3 +206,4 @@ export default function ProfilePage() {
     </Layout>
   )
 }
+

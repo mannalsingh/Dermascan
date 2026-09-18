@@ -19,9 +19,10 @@ venv/
 # Uploads & local generated test files
 dermascan_backend/data/users.json
 dermascan_ai_service/uploads/temp/*
-dermascan_ai_service/uploads/heatmaps/heatmap_be160b4d.jpg
-dermascan_backend/uploads/1788*
-dermascan_backend/uploads/reports/report-scr_mock_8*
+dermascan_ai_service/uploads/heatmaps/*
+dermascan_backend/uploads/*
+!dermascan_backend/uploads/reports/
+dermascan_backend/uploads/reports/*
 
 # Frontend build
 dist/

@@ -15,7 +15,7 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState('all') 
+  const [filter, setFilter] = useState('all')
   const [page, setPage] = useState(1)
 
   useEffect(() => {

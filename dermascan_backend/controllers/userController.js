@@ -1,44 +1,21 @@
 const User = require('../models/User');
 const UserProfile = require('../models/UserProfile');
-const mongoose = require('mongoose');
 
 exports.getProfile = async (req, res, next) => {
   try {
-    if (mongoose.connection.readyState !== 1) {
-      console.warn('⚠️ Database offline. Returning mock profile.');
-      return res.status(200).json({
-        success: true,
-        data: {
-          user: {
-            id: req.user.id,
-            name: req.user.name || 'Demo User',
-            email: req.user.email || 'demo@example.com',
-            role: req.user.role || 'user'
-          },
-          profile: {
-            user_id: req.user.id,
-            phone: '123-456-7890',
-            address: '123 Health Ave, Medical Center',
-            gender: 'prefer_not_to_say',
-            date_of_birth: '1995-01-01'
-          }
-        }
-      });
-    }
-
     const user = await User.findById(req.user.id).select('-password');
-    const profile = await UserProfile.findOne({ user_id: req.user.id });
-
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
+    let profile = await UserProfile.findOne({ user_id: req.user.id });
+    if (!profile) {
+      profile = await UserProfile.create({ user_id: req.user.id });
+    }
+
     res.status(200).json({
       success: true,
-      data: {
-        user,
-        profile
-      }
+      data: { user, profile }
     });
   } catch (error) {
     next(error);
@@ -47,20 +24,10 @@ exports.getProfile = async (req, res, next) => {
 
 exports.updateProfile = async (req, res, next) => {
   try {
-    const { phone, date_of_birth, gender, address } = req.body;
+    const { name, phone, date_of_birth, gender, address } = req.body;
 
-    if (mongoose.connection.readyState !== 1) {
-      console.warn('⚠️ Database offline. Returning simulated updated profile.');
-      return res.status(200).json({
-        success: true,
-        data: {
-          user_id: req.user.id,
-          phone,
-          date_of_birth,
-          gender,
-          address
-        }
-      });
+    if (name && name.trim()) {
+      await User.findByIdAndUpdate(req.user.id, { name: name.trim() });
     }
 
     const profile = await UserProfile.findOneAndUpdate(
@@ -69,9 +36,11 @@ exports.updateProfile = async (req, res, next) => {
       { new: true, runValidators: true, upsert: true }
     );
 
+    const updatedUser = await User.findById(req.user.id).select('-password');
+
     res.status(200).json({
       success: true,
-      data: profile
+      data: { profile, user: updatedUser }
     });
   } catch (error) {
     next(error);
