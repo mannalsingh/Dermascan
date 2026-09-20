@@ -1,0 +1,34 @@
+services:
+  # 1. AI Service (FastAPI + ONNX Runtime)
+  - type: web
+    name: dermascan-ai-service
+    runtime: python
+    rootDir: dermascan_ai_service
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.6
+
+  # 2. Backend REST API (Node.js + Express)
+  - type: web
+    name: dermascan-backend
+    runtime: node
+    rootDir: dermascan_backend
+    buildCommand: npm install
+    startCommand: npm start
+    plan: free
+    envVars:
+      - key: NODE_VERSION
+        value: 18.18.0
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: AI_SERVICE_URL
+        sync: false
+      - key: CLIENT_URL
+        sync: false

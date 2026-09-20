@@ -35,11 +35,14 @@ async def predict_image(file: UploadFile = File(...)):
 
         heatmap_filename = gradcam_service.generate_heatmap(temp_path)
         
+        base_url = os.getenv('BASE_URL', 'http://127.0.0.1:8000').rstrip('/')
+        model_version = prediction_result.get('model_version', '1.0.0')
+
         return JSONResponse({
             'prediction': prediction,
             'confidence_score': confidence_score,
-            'heatmap_url': f'http://127.0.0.1:8000/heatmaps/{heatmap_filename}',
-            'model_version': '1.0.0-stub'
+            'heatmap_url': f'{base_url}/heatmaps/{heatmap_filename}',
+            'model_version': model_version
         })
         
     except HTTPException as he:
