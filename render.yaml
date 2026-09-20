@@ -29,6 +29,9 @@ services:
       - key: JWT_EXPIRES_IN
         value: 7d
       - key: AI_SERVICE_URL
-        sync: false
+        fromService:
+          type: web
+          name: dermascan-ai-service
+          property: host
       - key: CLIENT_URL
         sync: false
