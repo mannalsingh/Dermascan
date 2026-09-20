@@ -33,15 +33,37 @@ exports.uploadScreening = async (req, res, next) => {
       });
     }
 
-    // 2. Verify authenticated user identity
+    // 2. Verify and resolve authenticated user identity to MongoDB ObjectId
     const rawUserId = req.user?._id || req.user?.id;
-    if (!rawUserId) {
-      return res.status(401).json({ success: false, message: 'Authentication required' });
+    let userObjectId = null;
+
+    if (rawUserId && mongoose.Types.ObjectId.isValid(rawUserId)) {
+      userObjectId = new mongoose.Types.ObjectId(rawUserId);
+    } else if (req.user?.email) {
+      const cleanEmail = req.user.email.toLowerCase().trim();
+      let dbUser = await User.findOne({ email: cleanEmail });
+      if (!dbUser) {
+        dbUser = await User.create({
+          name: req.user.name || 'User',
+          email: cleanEmail,
+          password: require('crypto').randomBytes(20).toString('hex'),
+          role: req.user.role || 'user',
+        });
+        await UserProfile.create({ user_id: dbUser._id }).catch(() => {});
+        console.log(`[Screening] Created missing User document ${dbUser._id} for ${cleanEmail}`);
+      }
+      userObjectId = dbUser._id;
+      req.user = dbUser;
     }
 
-    const userObjectId = mongoose.Types.ObjectId.isValid(rawUserId)
-      ? new mongoose.Types.ObjectId(rawUserId)
-      : rawUserId;
+    if (!userObjectId) {
+      console.error('[Screening Error] Could not resolve user to a valid MongoDB ObjectId:', {
+        userId: rawUserId,
+        email: req.user?.email
+      });
+      return res.status(401).json({ success: false, message: 'Authentication required. Could not resolve user account.' });
+    }
+
 
     const filePath = req.file.path;
     const imageUrl = `/uploads/${req.file.filename}`;
@@ -168,16 +190,20 @@ exports.getHistory = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Unauthorized', count: 0, history: [] });
     }
 
-    const userObjectId = mongoose.Types.ObjectId.isValid(rawUserId)
-      ? new mongoose.Types.ObjectId(rawUserId)
-      : rawUserId;
+    let userObjectId = null;
+    if (rawUserId && mongoose.Types.ObjectId.isValid(rawUserId)) {
+      userObjectId = new mongoose.Types.ObjectId(rawUserId);
+    } else if (req.user?.email) {
+      const dbUser = await User.findOne({ email: req.user.email.toLowerCase().trim() });
+      if (dbUser) userObjectId = dbUser._id;
+    }
 
-    const userMatch = {
-      $or: [
-        { user_id: userObjectId },
-        { user_id: rawUserId.toString() }
-      ]
-    };
+    const matchConditions = [];
+    if (userObjectId) matchConditions.push({ user_id: userObjectId });
+    if (rawUserId) matchConditions.push({ user_id: rawUserId.toString() });
+
+    const userMatch = matchConditions.length > 0 ? { $or: matchConditions } : { user_id: rawUserId };
+
 
     const screenings = await Screening.aggregate([
       { $match: userMatch },
@@ -228,9 +254,18 @@ exports.getScreeningById = async (req, res, next) => {
     const currentUserId = (req.user?._id || req.user?.id || '').toString();
     const ownerId = (screening.user_id || '').toString();
 
-    if (ownerId !== currentUserId && req.user.role !== 'admin') {
+    let isOwner = (ownerId === currentUserId);
+    if (!isOwner && req.user?.email) {
+      const dbUser = await User.findOne({ email: req.user.email.toLowerCase().trim() });
+      if (dbUser && dbUser._id.toString() === ownerId) {
+        isOwner = true;
+      }
+    }
+
+    if (!isOwner && req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Not authorized to access this screening' });
     }
+
 
     const result = await ScreeningResult.findOne({ screening_id: screening._id });
 
@@ -496,10 +531,18 @@ exports.downloadReport = async (req, res, next) => {
     const currentUserId = (req.user?._id || req.user?.id || '').toString();
     const ownerId = (screening.user_id || '').toString();
 
+    let isOwner = (ownerId === currentUserId);
+    if (!isOwner && req.user?.email) {
+      const dbUser = await User.findOne({ email: req.user.email.toLowerCase().trim() });
+      if (dbUser && dbUser._id.toString() === ownerId) {
+        isOwner = true;
+      }
+    }
 
-    if (ownerId !== currentUserId && req.user.role !== 'admin') {
+    if (!isOwner && req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Not authorized to access this report' });
     }
+
 
 
     const result = await ScreeningResult.findOne({ screening_id: screening._id });

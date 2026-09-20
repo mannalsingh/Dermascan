@@ -18,16 +18,21 @@ exports.getSummary = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-    const userObjectId = mongoose.Types.ObjectId.isValid(rawUserId)
-      ? new mongoose.Types.ObjectId(rawUserId)
-      : rawUserId;
+    const User = require('../models/User');
+    let userObjectId = null;
+    if (rawUserId && mongoose.Types.ObjectId.isValid(rawUserId)) {
+      userObjectId = new mongoose.Types.ObjectId(rawUserId);
+    } else if (req.user?.email) {
+      const dbUser = await User.findOne({ email: req.user.email.toLowerCase().trim() });
+      if (dbUser) userObjectId = dbUser._id;
+    }
 
-    const userMatch = {
-      $or: [
-        { user_id: userObjectId },
-        { user_id: rawUserId.toString() }
-      ]
-    };
+    const matchConditions = [];
+    if (userObjectId) matchConditions.push({ user_id: userObjectId });
+    if (rawUserId) matchConditions.push({ user_id: rawUserId.toString() });
+
+    const userMatch = matchConditions.length > 0 ? { $or: matchConditions } : { user_id: rawUserId };
+
 
     const total = await Screening.countDocuments(userMatch);
 

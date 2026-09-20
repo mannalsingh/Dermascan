@@ -186,45 +186,32 @@ exports.googleLogin = async (req, res, next) => {
     const mongoose = require('mongoose');
 
     if (mongoose.connection.readyState !== 1) {
-      let existingUser = fallbackStore.getUserByEmail(email);
-      if (!existingUser) {
-        existingUser = fallbackStore.saveUser({
-          id: 'google_' + Buffer.from(email).toString('base64').substring(0, 10),
-          name,
-          email,
-          role: 'user',
-        });
-      } else if (name && existingUser.name !== name) {
-        existingUser.name = name;
-        fallbackStore.saveUser(existingUser);
-      }
-
-      const token = generateToken(existingUser);
-      return res.status(200).json({
-        success: true,
-        token,
-        user: {
-          id: existingUser.id,
-          name: existingUser.name,
-          email: existingUser.email,
-          role: existingUser.role
-        },
+      console.error('[Google Auth Error] MongoDB is not connected (readyState: ' + mongoose.connection.readyState + ')');
+      return res.status(503).json({
+        success: false,
+        message: 'Database is currently unavailable. Please verify MongoDB Atlas connection.'
       });
     }
 
-    let user = await User.findOne({ email });
+    const cleanEmail = email.toLowerCase().trim();
+    const cleanName = (name && name.trim()) || fallbackStore.cleanNameFromEmail(cleanEmail);
+
+    let user = await User.findOne({ email: cleanEmail });
     if (!user) {
       user = await User.create({
-        name,
-        email,
+        name: cleanName,
+        email: cleanEmail,
         password: require('crypto').randomBytes(20).toString('hex'),
         role: 'user',
       });
-      await UserProfile.create({ user_id: user._id });
-    } else if (name && user.name !== name) {
-      user.name = name;
+      await UserProfile.create({ user_id: user._id }).catch(() => {});
+      console.log(`[Google Auth] Created new MongoDB User ${user._id} for ${cleanEmail}`);
+    } else if (cleanName && user.name !== cleanName) {
+      user.name = cleanName;
       await user.save();
     }
+
+    console.log(`[Google Auth] User authenticated successfully: ${user._id} (${cleanEmail})`);
 
     const token = generateToken({
       id: user._id,
@@ -239,6 +226,8 @@ exports.googleLogin = async (req, res, next) => {
       user: { id: user._id, name: user.name, email: user.email, role: user.role },
     });
   } catch (error) {
+    console.error('[Google Auth Error]', error.message);
     next(error);
   }
 };
+

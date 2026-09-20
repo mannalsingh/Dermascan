@@ -1,7 +1,8 @@
-
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const UserProfile = require('../models/UserProfile');
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 
 const protect = async (req, res, next) => {
   let token;
@@ -10,42 +11,67 @@ const protect = async (req, res, next) => {
     try {
       token = req.headers.authorization.split(' ')[1];
 
-      // All tokens must be valid signed JWTs — no raw-string bypasses
+      // All tokens must be valid signed JWTs
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // Fallback-store users: valid JWTs whose IDs are non-ObjectId strings
-      // (issued when DB was down during registration/login)
-      if (
-        mongoose.connection.readyState !== 1 ||
-        (decoded.id && typeof decoded.id === 'string' && (
-          decoded.id.startsWith('user_') ||
-          decoded.id.startsWith('local_') ||
-          decoded.id.startsWith('google')
-        ))
-      ) {
-        const fallbackStore = require('../data/fallbackStore');
-        const userFromStore = (decoded.email && fallbackStore.getUserByEmail(decoded.email)) || {};
-        const userName = decoded.name || userFromStore.name || 'User';
-        const userEmail = decoded.email || userFromStore.email || '';
+      // If database is connected, resolve to the actual MongoDB User document
+      if (mongoose.connection.readyState === 1) {
+        let user = null;
 
+        // 1. Try resolving by ObjectId if decoded.id is a valid ObjectId
+        if (decoded.id && mongoose.Types.ObjectId.isValid(decoded.id)) {
+          user = await User.findById(decoded.id).select('-password');
+        }
+
+        // 2. If not found by ID (e.g. token has google_ or user_ prefix), resolve by email
+        if (!user && decoded.email) {
+          const cleanEmail = decoded.email.toLowerCase().trim();
+          user = await User.findOne({ email: cleanEmail }).select('-password');
+
+          // If the user does not exist yet in MongoDB, create the real MongoDB User document
+          if (!user) {
+            try {
+              const cleanName = decoded.name || 'User';
+              user = await User.create({
+                name: cleanName,
+                email: cleanEmail,
+                password: crypto.randomBytes(20).toString('hex'),
+                role: decoded.role || 'user'
+              });
+              await UserProfile.create({ user_id: user._id }).catch(() => {});
+              console.log(`[Auth] Resolved and created MongoDB User ${user._id} for account ${user.email}`);
+            } catch (createErr) {
+              console.error('[Auth Error] Failed to create MongoDB User for account:', decoded.email, createErr.message);
+            }
+          }
+        }
+
+        if (user) {
+          req.user = user;
+          return next();
+        }
+
+        console.error('[Auth Error] Failed to resolve user from token:', { id: decoded.id, email: decoded.email });
+        return res.status(401).json({ success: false, message: 'Not authorized, user not found' });
+      }
+
+      // If database is temporarily down, check fallback store for signed tokens
+      if (decoded.email) {
+        const fallbackStore = require('../data/fallbackStore');
+        const userFromStore = fallbackStore.getUserByEmail(decoded.email) || {};
         req.user = {
           _id: decoded.id,
           id: decoded.id,
-          name: userName,
-          email: userEmail,
+          name: decoded.name || userFromStore.name || 'User',
+          email: decoded.email || userFromStore.email || '',
           role: decoded.role || userFromStore.role || 'user'
         };
         return next();
       }
 
-      req.user = await User.findById(decoded.id).select('-password');
-
-      if (!req.user) {
-        return res.status(401).json({ success: false, message: 'Not authorized, user not found' });
-      }
-
-      return next();
+      return res.status(503).json({ success: false, message: 'Database temporarily unavailable' });
     } catch (error) {
+      console.error('[Auth Error] Token verification failed:', error.message);
       return res.status(401).json({ success: false, message: 'Not authorized, token failed' });
     }
   }
@@ -56,3 +82,4 @@ const protect = async (req, res, next) => {
 };
 
 module.exports = { protect };
+
