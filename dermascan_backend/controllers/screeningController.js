@@ -147,25 +147,8 @@ exports.getHistory = async (req, res, next) => {
   try {
     const mongoose = require('mongoose');
     if (mongoose.connection.readyState !== 1) {
-      const mockHistory = [
-        {
-          screeningId: 'scr_mock_001',
-          imageUrl: '/uploads/mock_skin_1.jpg',
-          prediction: 'benign',
-          confidenceScore: 0.87,
-          riskLevel: 'low',
-          uploadedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          screeningId: 'scr_mock_002',
-          imageUrl: '/uploads/mock_skin_2.jpg',
-          prediction: 'malignant',
-          confidenceScore: 0.92,
-          riskLevel: 'high',
-          uploadedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-        }
-      ];
-      return res.status(200).json({ success: true, count: mockHistory.length, history: mockHistory });
+      // DB unavailable — return empty history for this user rather than shared mock records
+      return res.status(200).json({ success: true, count: 0, history: [] });
     }
 
     let userId = req.user._id;
@@ -209,24 +192,7 @@ exports.getScreeningById = async (req, res, next) => {
   try {
     const mongoose = require('mongoose');
     if (mongoose.connection.readyState !== 1) {
-      return res.status(200).json({
-        success: true,
-        screening: {
-          screeningId: req.params.id,
-          imageUrl: '/uploads/mock_skin_1.jpg',
-          uploadedAt: new Date().toISOString(),
-          status: 'completed',
-          result: {
-            resultId: 'mock-res-1',
-            screeningId: req.params.id,
-            prediction: 'benign',
-            confidenceScore: 0.87,
-            riskLevel: 'low',
-            heatmapUrl: '',
-            createdAt: new Date().toISOString()
-          }
-        }
-      });
+      return res.status(503).json({ success: false, message: 'Database temporarily unavailable. Please try again shortly.' });
     }
 
     const screening = await Screening.findById(req.params.id);

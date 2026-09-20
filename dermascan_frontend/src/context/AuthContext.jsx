@@ -52,12 +52,13 @@ export function AuthProvider({ children }) {
     return res.data
   }, [saveAuth])
 
-  const googleLogin = useCallback(async (name, email) => {
-    const res = await authAPI.googleLogin({ name, email })
+  const googleLogin = useCallback(async (credential) => {
+    const res = await authAPI.googleLogin({ credential })
     const { token: t, user: u } = res.data
     saveAuth(t, u)
     return res.data
   }, [saveAuth])
+
 
   const logout = useCallback(() => {
     clearAuth()

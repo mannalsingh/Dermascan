@@ -2,6 +2,8 @@ const User = require('../models/User');
 const UserProfile = require('../models/UserProfile');
 const jwt = require('jsonwebtoken');
 const fallbackStore = require('../data/fallbackStore');
+const { OAuth2Client } = require('google-auth-library');
+
 
 const generateToken = (userObj) => {
   const payload = typeof userObj === 'object' && userObj !== null
@@ -156,13 +158,31 @@ exports.login = async (req, res, next) => {
 
 exports.googleLogin = async (req, res, next) => {
   try {
-    const { name, email } = req.body;
+    const { credential } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ success: false, message: 'Google email is required' });
+    if (!credential) {
+      return res.status(400).json({ success: false, message: 'Google credential token is required' });
     }
 
-    const realName = (name && name.trim()) || fallbackStore.cleanNameFromEmail(email);
+    if (!process.env.GOOGLE_CLIENT_ID) {
+      return res.status(503).json({ success: false, message: 'Google login is not configured on this server' });
+    }
+
+    // Verify the Google ID token server-side — identity comes from Google, not from client body
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    let payload;
+    try {
+      const ticket = await client.verifyIdToken({
+        idToken: credential,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      payload = ticket.getPayload();
+    } catch (verifyErr) {
+      return res.status(401).json({ success: false, message: 'Google token verification failed' });
+    }
+
+    const email = payload.email;
+    const name = payload.name || fallbackStore.cleanNameFromEmail(email);
     const mongoose = require('mongoose');
 
     if (mongoose.connection.readyState !== 1) {
@@ -170,7 +190,7 @@ exports.googleLogin = async (req, res, next) => {
       if (!existingUser) {
         existingUser = fallbackStore.saveUser({
           id: 'google_' + Buffer.from(email).toString('base64').substring(0, 10),
-          name: realName,
+          name,
           email,
           role: 'user',
         });
@@ -195,7 +215,7 @@ exports.googleLogin = async (req, res, next) => {
     let user = await User.findOne({ email });
     if (!user) {
       user = await User.create({
-        name: realName,
+        name,
         email,
         password: require('crypto').randomBytes(20).toString('hex'),
         role: 'user',

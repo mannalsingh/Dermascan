@@ -33,5 +33,12 @@ services:
           type: web
           name: dermascan-ai-service
           property: host
+      - key: AI_SERVICE_PUBLIC_URL
+        fromService:
+          type: web
+          name: dermascan-ai-service
+          property: host
       - key: CLIENT_URL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
         sync: false

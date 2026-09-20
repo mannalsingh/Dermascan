@@ -6,29 +6,16 @@ exports.getSummary = async (req, res, next) => {
     const mongoose = require('mongoose');
 
     if (mongoose.connection.readyState !== 1) {
-      const mockSummary = {
-        totalScreenings: 2,
-        benignCount: 1,
-        malignantCount: 1,
-        riskDistribution: {
-          low: 1,
-          medium: 0,
-          high: 1
-        },
-        trendData: [
-          {
-            date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            count: 1
-          },
-          {
-            date: new Date().toISOString().split('T')[0],
-            count: 1
-          }
-        ]
-      };
+      // DB unavailable — return an empty summary for this user rather than shared mock data
       return res.status(200).json({
         success: true,
-        summary: mockSummary
+        summary: {
+          totalScreenings: 0,
+          benignCount: 0,
+          malignantCount: 0,
+          riskDistribution: { low: 0, medium: 0, high: 0 },
+          trendData: []
+        }
       });
     }
 
