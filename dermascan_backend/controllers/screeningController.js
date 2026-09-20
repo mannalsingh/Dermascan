@@ -22,11 +22,31 @@ exports.uploadScreening = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Please upload an image file' });
     }
 
-    const filePath = req.file.path;
-    const imageUrl = `/uploads/${req.file.filename}`;
     const mongoose = require('mongoose');
 
-    // Normalize AI service URL and log safely
+    // 1. Verify database connection up front
+    if (mongoose.connection.readyState !== 1) {
+      console.error(`[Screening Error] Database is not connected (readyState: ${mongoose.connection.readyState})`);
+      return res.status(503).json({
+        success: false,
+        message: 'Database is currently unavailable. Please verify that MongoDB Atlas is connected and reachable.'
+      });
+    }
+
+    // 2. Verify authenticated user identity
+    const rawUserId = req.user?._id || req.user?.id;
+    if (!rawUserId) {
+      return res.status(401).json({ success: false, message: 'Authentication required' });
+    }
+
+    const userObjectId = mongoose.Types.ObjectId.isValid(rawUserId)
+      ? new mongoose.Types.ObjectId(rawUserId)
+      : rawUserId;
+
+    const filePath = req.file.path;
+    const imageUrl = `/uploads/${req.file.filename}`;
+
+    // 3. Normalize AI service URL and log safely
     const rawAiUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
     let cleanAiUrl = rawAiUrl.trim();
     if (!/^https?:\/\//i.test(cleanAiUrl)) {
@@ -35,62 +55,7 @@ exports.uploadScreening = async (req, res, next) => {
     const aiPredictUrl = `${cleanAiUrl.replace(/\/+$/, '')}/predict`;
     console.log(`[AI Service] Sending screening image to endpoint: ${aiPredictUrl}`);
 
-    if (mongoose.connection.readyState !== 1) {
-      let aiResponseData;
-      try {
-        const formData = new FormData();
-        formData.append('file', fs.createReadStream(filePath), req.file.originalname);
-        const aiResponse = await axios.post(aiPredictUrl, formData, {
-          headers: formData.getHeaders(),
-          timeout: 30000
-        });
-        aiResponseData = aiResponse.data;
-      } catch (aiError) {
-        console.error(`[AI Service Error] AI request to ${aiPredictUrl} failed:`, aiError.message);
-        return res.status(503).json({
-          success: false,
-          message: 'AI screening service is currently unavailable. Please verify that the AI service is online and accessible.',
-          error: aiError.message,
-          aiEndpoint: aiPredictUrl
-        });
-      }
-
-      const getRiskLevel = (prediction, confidence) => {
-        if (prediction === 'malignant') return confidence > 0.8 ? 'high' : 'medium';
-        return confidence > 0.7 ? 'low' : 'medium';
-      };
-
-      const riskLevel = getRiskLevel(aiResponseData.prediction, aiResponseData.confidence_score);
-      const mockResultId = 'res_mock_' + Math.random().toString(36).substr(2, 9);
-      const mockScreeningId = 'scr_mock_' + Math.random().toString(36).substr(2, 9);
-      const aiServicePublicUrl = process.env.AI_SERVICE_PUBLIC_URL || cleanAiUrl.replace(/\/+$/, '');
-      const finalHeatmapUrl = aiResponseData.heatmap_url
-        ? aiResponseData.heatmap_url
-            .replace('http://127.0.0.1:8000', aiServicePublicUrl)
-            .replace('http://localhost:8000', aiServicePublicUrl)
-            .replace('http://10.50.204.176:8000', aiServicePublicUrl)
-        : '';
-
-      return res.status(201).json({
-        success: true,
-        result: {
-          resultId: mockResultId,
-          screeningId: mockScreeningId,
-          prediction: aiResponseData.prediction,
-          confidenceScore: aiResponseData.confidence_score,
-          riskLevel,
-          heatmapUrl: finalHeatmapUrl,
-          createdAt: new Date().toISOString()
-        }
-      });
-    }
-
-    const screening = await Screening.create({
-      user_id: req.user.id,
-      image_url: imageUrl,
-      status: 'pending'
-    });
-
+    // 4. Call AI prediction service
     let aiResponseData;
     try {
       const formData = new FormData();
@@ -102,10 +67,6 @@ exports.uploadScreening = async (req, res, next) => {
       aiResponseData = aiResponse.data;
     } catch (aiError) {
       console.error(`[AI Service Error] AI request to ${aiPredictUrl} failed:`, aiError.message);
-      if (screening) {
-        screening.status = 'failed';
-        await screening.save().catch(() => {});
-      }
       return res.status(503).json({
         success: false,
         message: 'AI screening service is currently unavailable. Please verify that the AI service is online and accessible.',
@@ -119,46 +80,77 @@ exports.uploadScreening = async (req, res, next) => {
       return confidence > 0.7 ? 'low' : 'medium';
     };
 
-    const riskLevel = getRiskLevel(aiResponseData.prediction, aiResponseData.confidence_score);
+    const rawPred = String(aiResponseData.prediction || 'benign').toLowerCase().trim();
+    const prediction = ['benign', 'malignant'].includes(rawPred) ? rawPred : 'benign';
+    const confidenceScore = Math.max(0, Math.min(1, parseFloat(aiResponseData.confidence_score) || 0.0));
+    const riskLevel = getRiskLevel(prediction, confidenceScore);
 
-    const screeningResult = await ScreeningResult.create({
-      screening_id: screening._id,
-      prediction: aiResponseData.prediction,
-      confidence_score: aiResponseData.confidence_score,
-      risk_level: riskLevel,
-      heatmap_url: aiResponseData.heatmap_url || '',
-      ai_service_response: aiResponseData
-    });
+    // 5. Persist Screening and ScreeningResult to MongoDB
+    let screening;
+    let screeningResult;
+    try {
+      screening = await Screening.create({
+        user_id: userObjectId,
+        image_url: imageUrl,
+        status: 'completed'
+      });
 
-    screening.status = 'completed';
-    await screening.save();
+      screeningResult = await ScreeningResult.create({
+        screening_id: screening._id,
+        prediction,
+        confidence_score: confidenceScore,
+        risk_level: riskLevel,
+        heatmap_url: aiResponseData.heatmap_url || '',
+        ai_service_response: aiResponseData
+      });
 
-    await ScanHistory.create({
-      screening_id: screening._id,
-      previous_prediction: aiResponseData.prediction,
-      previous_confidence: aiResponseData.confidence_score
-    });
+      try {
+        await ScanHistory.create({
+          screening_id: screening._id,
+          previous_prediction: prediction,
+          previous_confidence: confidenceScore
+        });
+      } catch (scanHistErr) {
+        console.warn('[Screening] ScanHistory audit log skipped:', scanHistErr.message);
+      }
+
+      console.log(`[Screening] Successfully saved screening ${screening._id} and result ${screeningResult._id} for user ${rawUserId}`);
+    } catch (dbError) {
+      console.error(`[Screening DB Error] Failed to persist screening to MongoDB:`, dbError.message);
+      // Clean up orphaned screening record if result creation failed
+      if (screening && !screeningResult) {
+        await Screening.findByIdAndDelete(screening._id).catch(() => {});
+      }
+      return res.status(500).json({
+        success: false,
+        message: 'AI analysis succeeded, but saving the screening record to database failed.',
+        error: dbError.message
+      });
+    }
 
     const aiServicePublicUrl = process.env.AI_SERVICE_PUBLIC_URL || cleanAiUrl.replace(/\/+$/, '');
-    res.status(201).json({
+    const finalHeatmapUrl = screeningResult.heatmap_url
+      ? screeningResult.heatmap_url
+          .replace('http://127.0.0.1:8000', aiServicePublicUrl)
+          .replace('http://localhost:8000', aiServicePublicUrl)
+          .replace('http://10.50.204.176:8000', aiServicePublicUrl)
+      : '';
+
+    return res.status(201).json({
       success: true,
       result: {
         resultId: screeningResult._id,
-        screeningId: screeningResult.screening_id,
+        screeningId: screening._id,
         prediction: screeningResult.prediction,
         confidenceScore: screeningResult.confidence_score,
         riskLevel: screeningResult.risk_level,
-        heatmapUrl: screeningResult.heatmap_url
-          ? screeningResult.heatmap_url
-              .replace('http://127.0.0.1:8000', aiServicePublicUrl)
-              .replace('http://localhost:8000', aiServicePublicUrl)
-              .replace('http://10.50.204.176:8000', aiServicePublicUrl)
-          : '',
-        createdAt: screeningResult.created_at || new Date().toISOString()
+        heatmapUrl: finalHeatmapUrl,
+        createdAt: screening.uploaded_at || new Date().toISOString()
       }
     });
 
   } catch (error) {
+    console.error('[Screening Upload Error]', error.message);
     next(error);
   }
 };
@@ -167,17 +159,28 @@ exports.getHistory = async (req, res, next) => {
   try {
     const mongoose = require('mongoose');
     if (mongoose.connection.readyState !== 1) {
-      // DB unavailable — return empty history for this user rather than shared mock records
-      return res.status(200).json({ success: true, count: 0, history: [] });
+      console.error(`[History Error] Database not connected (readyState: ${mongoose.connection.readyState})`);
+      return res.status(503).json({ success: false, message: 'Database is currently unavailable', count: 0, history: [] });
     }
 
-    let userId = req.user._id;
-    if (mongoose.Types.ObjectId.isValid(userId)) {
-      userId = new mongoose.Types.ObjectId(userId);
+    const rawUserId = req.user?._id || req.user?.id;
+    if (!rawUserId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized', count: 0, history: [] });
     }
+
+    const userObjectId = mongoose.Types.ObjectId.isValid(rawUserId)
+      ? new mongoose.Types.ObjectId(rawUserId)
+      : rawUserId;
+
+    const userMatch = {
+      $or: [
+        { user_id: userObjectId },
+        { user_id: rawUserId.toString() }
+      ]
+    };
 
     const screenings = await Screening.aggregate([
-      { $match: { user_id: userId } },
+      { $match: userMatch },
       { $sort: { uploaded_at: -1 } },
       {
         $lookup: {
@@ -202,9 +205,11 @@ exports.getHistory = async (req, res, next) => {
       };
     });
 
+    console.log(`[History] Retrieved ${formattedHistory.length} screenings for user ${rawUserId}`);
     res.status(200).json({ success: true, count: formattedHistory.length, history: formattedHistory });
   } catch (error) {
-    res.status(200).json({ success: true, count: 0, history: [] });
+    console.error('[History Error]', error.message);
+    next(error);
   }
 };
 
@@ -220,11 +225,17 @@ exports.getScreeningById = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Screening not found' });
     }
 
-    if (screening.user_id.toString() !== req.user.id && req.user.role !== 'admin') {
+    const currentUserId = (req.user?._id || req.user?.id || '').toString();
+    const ownerId = (screening.user_id || '').toString();
+
+    if (ownerId !== currentUserId && req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Not authorized to access this screening' });
     }
 
     const result = await ScreeningResult.findOne({ screening_id: screening._id });
+
+    const aiServicePublicUrl = process.env.AI_SERVICE_PUBLIC_URL || process.env.AI_SERVICE_URL || 'http://localhost:8000';
+    const cleanPublicUrl = aiServicePublicUrl.replace(/\/+$/, '');
 
     const formattedResult = result ? {
       resultId: result._id,
@@ -232,10 +243,16 @@ exports.getScreeningById = async (req, res, next) => {
       prediction: result.prediction,
       confidenceScore: result.confidence_score,
       riskLevel: result.risk_level,
-      heatmapUrl: result.heatmap_url,
+      heatmapUrl: result.heatmap_url
+        ? result.heatmap_url
+            .replace('http://127.0.0.1:8000', cleanPublicUrl)
+            .replace('http://localhost:8000', cleanPublicUrl)
+            .replace('http://10.50.204.176:8000', cleanPublicUrl)
+        : '',
       createdAt: result.created_at || new Date().toISOString()
     } : null;
 
+    console.log(`[Screening Detail] Loaded screening ${screening._id} for user ${currentUserId}`);
     res.status(200).json({
       success: true,
       screening: {
@@ -247,11 +264,13 @@ exports.getScreeningById = async (req, res, next) => {
       }
     });
   } catch (error) {
+    console.error('[Screening Detail Error]', error.message);
     next(error);
   }
 };
 
 const getRecommendations = (prediction, riskLevel) => {
+
   if (prediction === 'malignant' && riskLevel === 'high') {
     return [
       'URGENT: Consult a dermatologist or oncologist immediately.',
@@ -474,9 +493,14 @@ exports.downloadReport = async (req, res, next) => {
     const screening = await Screening.findById(req.params.id);
     if (!screening) return res.status(404).json({ success: false, message: 'Screening not found' });
 
-    if (screening.user_id.toString() !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({ success: false, message: 'Not authorized' });
+    const currentUserId = (req.user?._id || req.user?.id || '').toString();
+    const ownerId = (screening.user_id || '').toString();
+
+
+    if (ownerId !== currentUserId && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Not authorized to access this report' });
     }
+
 
     const result = await ScreeningResult.findOne({ screening_id: screening._id });
     if (!result) return res.status(404).json({ success: false, message: 'Result not found' });

@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const path = require('path');
+const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 
 const authRoutes = require('./routes/authRoutes');
@@ -14,6 +15,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 connectDB();
+
 
 const allowedOrigins = [
   'http://localhost:3000',
@@ -53,8 +55,16 @@ app.use('/api/screening', screeningRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', message: 'DermaScan AI backend is running', timestamp: new Date().toISOString() });
+  const isConnected = mongoose.connection.readyState === 1;
+  res.json({
+    status: isConnected ? 'ok' : 'degraded',
+    message: isConnected ? 'DermaScan AI backend is running and connected to database' : 'DermaScan AI backend is running but database is disconnected',
+    database: isConnected ? 'connected' : 'disconnected',
+    readyState: mongoose.connection.readyState,
+    timestamp: new Date().toISOString()
+  });
 });
+
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });

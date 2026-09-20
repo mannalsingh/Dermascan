@@ -6,28 +6,33 @@ exports.getSummary = async (req, res, next) => {
     const mongoose = require('mongoose');
 
     if (mongoose.connection.readyState !== 1) {
-      // DB unavailable — return an empty summary for this user rather than shared mock data
-      return res.status(200).json({
-        success: true,
-        summary: {
-          totalScreenings: 0,
-          benignCount: 0,
-          malignantCount: 0,
-          riskDistribution: { low: 0, medium: 0, high: 0 },
-          trendData: []
-        }
+      console.error(`[Analytics Error] Database not connected (readyState: ${mongoose.connection.readyState})`);
+      return res.status(503).json({
+        success: false,
+        message: 'Database is currently unavailable. Please verify MongoDB Atlas connection.'
       });
     }
 
-    let userId = req.user._id;
-    if (mongoose.Types.ObjectId.isValid(userId)) {
-      userId = new mongoose.Types.ObjectId(userId);
+    const rawUserId = req.user?._id || req.user?.id;
+    if (!rawUserId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-    const total = await Screening.countDocuments({ user_id: userId });
+    const userObjectId = mongoose.Types.ObjectId.isValid(rawUserId)
+      ? new mongoose.Types.ObjectId(rawUserId)
+      : rawUserId;
+
+    const userMatch = {
+      $or: [
+        { user_id: userObjectId },
+        { user_id: rawUserId.toString() }
+      ]
+    };
+
+    const total = await Screening.countDocuments(userMatch);
 
     const results = await Screening.aggregate([
-      { $match: { user_id: userId } },
+      { $match: userMatch },
       {
         $lookup: {
           from: 'screeningresults',
@@ -55,7 +60,12 @@ exports.getSummary = async (req, res, next) => {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const trendData = await Screening.aggregate([
-      { $match: { user_id: userId, uploaded_at: { $gte: thirtyDaysAgo } } },
+      {
+        $match: {
+          ...userMatch,
+          uploaded_at: { $gte: thirtyDaysAgo }
+        }
+      },
       { 
         $group: { 
           _id: { $dateToString: { format: '%Y-%m-%d', date: '$uploaded_at' } }, 
@@ -69,6 +79,8 @@ exports.getSummary = async (req, res, next) => {
       date: item._id,
       count: item.count
     }));
+
+    console.log(`[Analytics] Computed summary for user ${rawUserId}: total=${total}, benign=${stats.benign || 0}, malignant=${stats.malignant || 0}`);
 
     res.status(200).json({
       success: true,
@@ -85,6 +97,8 @@ exports.getSummary = async (req, res, next) => {
       }
     });
   } catch (error) {
+    console.error('[Analytics Error]', error.message);
     next(error);
   }
 };
+
