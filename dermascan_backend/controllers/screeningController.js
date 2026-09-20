@@ -26,25 +26,33 @@ exports.uploadScreening = async (req, res, next) => {
     const imageUrl = `/uploads/${req.file.filename}`;
     const mongoose = require('mongoose');
 
+    // Normalize AI service URL and log safely
+    const rawAiUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+    let cleanAiUrl = rawAiUrl.trim();
+    if (!/^https?:\/\//i.test(cleanAiUrl)) {
+      cleanAiUrl = cleanAiUrl.includes('.onrender.com') ? `https://${cleanAiUrl}` : `http://${cleanAiUrl}`;
+    }
+    const aiPredictUrl = `${cleanAiUrl.replace(/\/+$/, '')}/predict`;
+    console.log(`[AI Service] Sending screening image to endpoint: ${aiPredictUrl}`);
+
     if (mongoose.connection.readyState !== 1) {
       let aiResponseData;
       try {
         const formData = new FormData();
         formData.append('file', fs.createReadStream(filePath), req.file.originalname);
-        const aiResponse = await axios.post(`${process.env.AI_SERVICE_URL || 'http://localhost:8000'}/predict`, formData, {
+        const aiResponse = await axios.post(aiPredictUrl, formData, {
           headers: formData.getHeaders(),
           timeout: 30000
         });
         aiResponseData = aiResponse.data;
       } catch (aiError) {
-        const stats = fs.statSync(filePath);
-        const seed = (stats.size % 100) / 100;
-        const isMalignant = seed > 0.45;
-        aiResponseData = {
-          prediction: isMalignant ? 'malignant' : 'benign',
-          confidence_score: parseFloat((0.68 + (seed * 0.20)).toFixed(4)),
-          heatmap_url: ''
-        };
+        console.error(`[AI Service Error] AI request to ${aiPredictUrl} failed:`, aiError.message);
+        return res.status(503).json({
+          success: false,
+          message: 'AI screening service is currently unavailable. Please verify that the AI service is online and accessible.',
+          error: aiError.message,
+          aiEndpoint: aiPredictUrl
+        });
       }
 
       const getRiskLevel = (prediction, confidence) => {
@@ -55,10 +63,11 @@ exports.uploadScreening = async (req, res, next) => {
       const riskLevel = getRiskLevel(aiResponseData.prediction, aiResponseData.confidence_score);
       const mockResultId = 'res_mock_' + Math.random().toString(36).substr(2, 9);
       const mockScreeningId = 'scr_mock_' + Math.random().toString(36).substr(2, 9);
-      const aiServicePublicUrl = process.env.AI_SERVICE_PUBLIC_URL || process.env.AI_SERVICE_URL || 'http://localhost:8000';
+      const aiServicePublicUrl = process.env.AI_SERVICE_PUBLIC_URL || cleanAiUrl.replace(/\/+$/, '');
       const finalHeatmapUrl = aiResponseData.heatmap_url
         ? aiResponseData.heatmap_url
             .replace('http://127.0.0.1:8000', aiServicePublicUrl)
+            .replace('http://localhost:8000', aiServicePublicUrl)
             .replace('http://10.50.204.176:8000', aiServicePublicUrl)
         : '';
 
@@ -86,13 +95,23 @@ exports.uploadScreening = async (req, res, next) => {
     try {
       const formData = new FormData();
       formData.append('file', fs.createReadStream(filePath), req.file.originalname);
-      const aiResponse = await axios.post(`${process.env.AI_SERVICE_URL}/predict`, formData, {
+      const aiResponse = await axios.post(aiPredictUrl, formData, {
         headers: formData.getHeaders(),
         timeout: 30000
       });
       aiResponseData = aiResponse.data;
     } catch (aiError) {
-      aiResponseData = { prediction: 'benign', confidence_score: 0.87, heatmap_url: '' };
+      console.error(`[AI Service Error] AI request to ${aiPredictUrl} failed:`, aiError.message);
+      if (screening) {
+        screening.status = 'failed';
+        await screening.save().catch(() => {});
+      }
+      return res.status(503).json({
+        success: false,
+        message: 'AI screening service is currently unavailable. Please verify that the AI service is online and accessible.',
+        error: aiError.message,
+        aiEndpoint: aiPredictUrl
+      });
     }
 
     const getRiskLevel = (prediction, confidence) => {
@@ -120,7 +139,7 @@ exports.uploadScreening = async (req, res, next) => {
       previous_confidence: aiResponseData.confidence_score
     });
 
-    const aiServicePublicUrl = process.env.AI_SERVICE_PUBLIC_URL || process.env.AI_SERVICE_URL || 'http://localhost:8000';
+    const aiServicePublicUrl = process.env.AI_SERVICE_PUBLIC_URL || cleanAiUrl.replace(/\/+$/, '');
     res.status(201).json({
       success: true,
       result: {
@@ -132,6 +151,7 @@ exports.uploadScreening = async (req, res, next) => {
         heatmapUrl: screeningResult.heatmap_url
           ? screeningResult.heatmap_url
               .replace('http://127.0.0.1:8000', aiServicePublicUrl)
+              .replace('http://localhost:8000', aiServicePublicUrl)
               .replace('http://10.50.204.176:8000', aiServicePublicUrl)
           : '',
         createdAt: screeningResult.created_at || new Date().toISOString()
