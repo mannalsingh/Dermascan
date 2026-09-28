@@ -62,17 +62,29 @@ app.get('/', (req, res) => {
   });
 });
 
-app.get('/health', (req, res) => {
+const { getSmtpDiagnosticStatus, verifySmtpOnStartup } = require('./config/emailService');
+
+app.get('/health', async (req, res) => {
   const isConnected = mongoose.connection.readyState === 1;
+  const smtp = await getSmtpDiagnosticStatus();
   res.json({
-    status: isConnected ? 'ok' : 'degraded',
-    message: isConnected ? 'DermaScan AI backend is running and connected to database' : 'DermaScan AI backend is running but database is disconnected',
+    status: isConnected && smtp.configured && smtp.verifyStatus === 'connected' ? 'ok' : 'degraded',
+    message: isConnected
+      ? 'DermaScan AI backend is running and connected to database'
+      : 'DermaScan AI backend is running but database is disconnected',
     database: isConnected ? 'connected' : 'disconnected',
     readyState: mongoose.connection.readyState,
-    timestamp: new Date().toISOString()
+    smtp: {
+      configured: smtp.configured,
+      host: smtp.host,
+      port: smtp.port,
+      sender: smtp.sender,
+      status: smtp.verifyStatus,
+      detail: smtp.verifyMessage,
+    },
+    timestamp: new Date().toISOString(),
   });
 });
-
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
@@ -84,5 +96,6 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`[Server] DermaScan AI backend is running on http://localhost:${PORT}`);
+  verifySmtpOnStartup();
 });
 
