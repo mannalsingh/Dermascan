@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { toast } from 'sonner'
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
+const GOOGLE_CLIENT_ID = (import.meta.env.VITE_GOOGLE_CLIENT_ID || '')
+  .trim()
+  .replace(/^["']|["']$/g, '');
 
 export default function GoogleAuthButton({
   className = '',
@@ -15,6 +17,14 @@ export default function GoogleAuthButton({
   const tokenClientRef = useRef(null)
   const { googleLogin } = useAuth()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    console.log('[Google Auth Diagnostic] Runtime Origin:', window.location.origin);
+    console.log(
+      '[Google Auth Diagnostic] Client ID:',
+      GOOGLE_CLIENT_ID ? `${GOOGLE_CLIENT_ID.substring(0, 20)}...` : 'NOT_CONFIGURED'
+    );
+  }, []);
 
   const handleCredentialResponse = useCallback(
     async (response) => {

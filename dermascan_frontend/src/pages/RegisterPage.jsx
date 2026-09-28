@@ -38,8 +38,6 @@ export default function RegisterPage() {
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const googleBtnRef = useRef(null)
-
   const handleChange = (e) => {
     setError('')
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }))
@@ -116,47 +114,6 @@ export default function RegisterPage() {
     }
   }, [googleLogin, navigate])
 
-  // Initialize standard Google Identity Services button with 'continue_with'
-  useEffect(() => {
-    if (!GOOGLE_CLIENT_ID || step !== 1) return
-
-    const initGoogle = () => {
-      if (!window.google?.accounts?.id) return
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleResponse,
-        auto_select: false,
-        cancel_on_tap_outside: true,
-      })
-
-      if (googleBtnRef.current) {
-        googleBtnRef.current.innerHTML = ''
-        window.google.accounts.id.renderButton(googleBtnRef.current, {
-          type: 'standard',
-          theme: 'outline',
-          size: 'large',
-          text: 'continue_with',
-          shape: 'rectangular',
-          logo_alignment: 'left',
-          width: 384,
-        })
-      }
-    }
-
-    if (window.google?.accounts?.id) {
-      initGoogle()
-    } else {
-      const script = document.createElement('script')
-      script.src = 'https://accounts.google.com/gsi/client'
-      script.async = true
-      script.defer = true
-      script.onload = initGoogle
-      document.body.appendChild(script)
-      return () => {
-        if (document.body.contains(script)) document.body.removeChild(script)
-      }
-    }
-  }, [handleGoogleResponse, step])
 
   const strength = getStrength(form.password)
 
