@@ -515,37 +515,60 @@ exports.loginComplete = async (req, res, next) => {
  */
 exports.googleLogin = async (req, res, next) => {
   try {
-    const { credential } = req.body;
+    const { credential, accessToken } = req.body;
 
-    if (!credential) {
+    if (!credential && !accessToken) {
       return res
         .status(400)
-        .json({ success: false, message: 'Google credential token is required' });
+        .json({ success: false, message: 'Google authentication token is required' });
     }
 
-    if (!process.env.GOOGLE_CLIENT_ID) {
+    let email, name;
+
+    if (credential) {
+      if (!process.env.GOOGLE_CLIENT_ID) {
+        return res
+          .status(503)
+          .json({ success: false, message: 'Google login is not configured on this server' });
+      }
+
+      // Verify the Google ID token server-side
+      const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+      try {
+        const ticket = await client.verifyIdToken({
+          idToken: credential,
+          audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        email = payload.email;
+        name = payload.name;
+      } catch (verifyErr) {
+        return res
+          .status(401)
+          .json({ success: false, message: 'Google token verification failed' });
+      }
+    } else if (accessToken) {
+      // Verify OAuth2 access token by querying Google userinfo
+      const axios = require('axios');
+      try {
+        const userInfoRes = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        email = userInfoRes.data.email;
+        name = userInfoRes.data.name;
+      } catch (err) {
+        return res
+          .status(401)
+          .json({ success: false, message: 'Google access token verification failed' });
+      }
+    }
+
+    if (!email) {
       return res
-        .status(503)
-        .json({ success: false, message: 'Google login is not configured on this server' });
+        .status(400)
+        .json({ success: false, message: 'Unable to retrieve email from Google' });
     }
 
-    // Verify the Google ID token server-side — identity comes from Google, not from client body
-    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-    let payload;
-    try {
-      const ticket = await client.verifyIdToken({
-        idToken: credential,
-        audience: process.env.GOOGLE_CLIENT_ID,
-      });
-      payload = ticket.getPayload();
-    } catch (verifyErr) {
-      return res
-        .status(401)
-        .json({ success: false, message: 'Google token verification failed' });
-    }
-
-    const email = payload.email;
-    const name = payload.name || fallbackStore.cleanNameFromEmail(email);
     const mongoose = require('mongoose');
 
     if (mongoose.connection.readyState !== 1) {

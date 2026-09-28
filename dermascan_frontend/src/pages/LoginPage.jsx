@@ -251,7 +251,7 @@ export default function LoginPage() {
             <div className="animate-fade-in-up">
               {/* Google Sign In Button */}
               <div className="mb-2">
-                <GoogleAuthButton width={340} />
+                <GoogleAuthButton className="w-full" />
 
                 <div className="flex items-center gap-3 my-5">
                   <div className="flex-1 h-px bg-slate-200" />

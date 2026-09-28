@@ -52,8 +52,13 @@ export function AuthProvider({ children }) {
     return res.data
   }, [saveAuth])
 
-  const googleLogin = useCallback(async (credential) => {
-    const res = await authAPI.googleLogin({ credential })
+  const googleLogin = useCallback(async (tokenData) => {
+    const payload = typeof tokenData === 'object' && tokenData !== null
+      ? tokenData
+      : (typeof tokenData === 'string' && tokenData.startsWith('ya29.')
+          ? { accessToken: tokenData }
+          : { credential: tokenData })
+    const res = await authAPI.googleLogin(payload)
     const { token: t, user: u } = res.data
     saveAuth(t, u)
     return res.data
