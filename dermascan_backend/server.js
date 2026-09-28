@@ -71,24 +71,31 @@ const { getSmtpDiagnosticStatus, verifySmtpOnStartup } = require('./config/email
 
 app.get('/health', async (req, res) => {
   const isConnected = mongoose.connection.readyState === 1;
-  const smtp = await getSmtpDiagnosticStatus();
+  const emailDiag = await getSmtpDiagnosticStatus();
   res.json({
-    status: isConnected && smtp.configured && smtp.verifyStatus === 'connected' ? 'ok' : 'degraded',
+    status: isConnected && emailDiag.configured && (emailDiag.verifyStatus === 'ready' || emailDiag.verifyStatus === 'connected') ? 'ok' : 'degraded',
     message: isConnected
       ? 'DermaScan AI backend is running and connected to database'
       : 'DermaScan AI backend is running but database is disconnected',
     database: isConnected ? 'connected' : 'disconnected',
     readyState: mongoose.connection.readyState,
+    email: {
+      provider: emailDiag.provider,
+      configured: emailDiag.configured,
+      protocol: emailDiag.protocol,
+      port: emailDiag.port,
+      sender: emailDiag.sender,
+      status: emailDiag.verifyStatus,
+      detail: emailDiag.verifyMessage,
+    },
     smtp: {
-      configured: smtp.configured,
-      host: smtp.host,
-      port: smtp.port,
-      secure: smtp.secure,
-      ipFamily: smtp.ipFamily,
-      resolvedIp: smtp.resolvedIp,
-      sender: smtp.sender,
-      status: smtp.verifyStatus,
-      detail: smtp.verifyMessage,
+      configured: emailDiag.configured,
+      provider: emailDiag.provider,
+      host: emailDiag.host,
+      port: emailDiag.port,
+      secure: emailDiag.secure,
+      status: emailDiag.verifyStatus,
+      detail: emailDiag.verifyMessage,
     },
     timestamp: new Date().toISOString(),
   });

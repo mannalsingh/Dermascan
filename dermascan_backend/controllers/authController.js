@@ -632,14 +632,14 @@ exports.googleLogin = async (req, res, next) => {
 
     console.log(`[Google Auth] User authenticated with Google: ${user._id} (${cleanEmail}). Initiating OTP verification.`);
 
-    // ── Verify SMTP configuration exists before generating/saving OTP ──
+    // ── Verify Email service configuration exists before generating/saving OTP ──
     const { getSanitizedConfig } = require('../config/emailService');
-    const smtpConfig = getSanitizedConfig();
-    if (!smtpConfig.hasUser || !smtpConfig.hasPass) {
-      console.error('[Google Auth] Cannot dispatch OTP: SMTP credentials missing or invalid in environment.');
+    const emailConfig = getSanitizedConfig();
+    if (!emailConfig.hasKey) {
+      console.error('[Google Auth] Cannot dispatch OTP: RESEND_API_KEY missing or invalid in environment.');
       return res.status(503).json({
         success: false,
-        message: 'Email service is currently unconfigured. Please check server SMTP configuration.',
+        message: 'Email service is currently unconfigured. Please configure RESEND_API_KEY.',
       });
     }
 
@@ -909,13 +909,13 @@ exports.resendGoogleOtp = async (req, res, next) => {
       }
     }
 
-    // ── Verify SMTP configuration before generating/resending OTP ──
+    // ── Verify Email service configuration before generating/resending OTP ──
     const { getSanitizedConfig } = require('../config/emailService');
-    const smtpConfig = getSanitizedConfig();
-    if (!smtpConfig.hasUser || !smtpConfig.hasPass) {
+    const emailConfig = getSanitizedConfig();
+    if (!emailConfig.hasKey) {
       return res.status(503).json({
         success: false,
-        message: 'Email service is currently unconfigured. Please check server SMTP configuration.',
+        message: 'Email service is currently unconfigured. Please configure RESEND_API_KEY.',
       });
     }
 
