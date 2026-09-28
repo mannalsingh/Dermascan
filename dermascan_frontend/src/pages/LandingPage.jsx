@@ -70,7 +70,7 @@ export default function LandingPage() {
               </Link>
             ) : (
               <>
-                <GoogleAuthButton className="hidden sm:inline-flex text-xs py-2 px-3.5" />
+                <GoogleAuthButton className="inline-flex text-xs py-2 px-2.5 sm:px-3.5" />
                 <Link to="/login" className="btn-secondary text-sm py-2 px-3.5">
                   Sign In
                 </Link>

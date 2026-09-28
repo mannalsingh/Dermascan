@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { toast } from 'sonner'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 
@@ -14,10 +15,30 @@ export default function GoogleAuthButton({
   const { googleLogin } = useAuth()
   const navigate = useNavigate()
 
+  const handleCredentialResponse = useCallback(
+    async (response) => {
+      if (response?.credential) {
+        try {
+          setLoading(true)
+          await googleLogin({ credential: response.credential })
+          toast.success('Signed in successfully with Google')
+          navigate('/dashboard', { replace: true })
+        } catch (err) {
+          console.error('Google credential login error:', err)
+          toast.error(err.response?.data?.message || 'Google sign-in failed. Please try again.')
+        } finally {
+          setLoading(false)
+        }
+      }
+    },
+    [googleLogin, navigate]
+  )
+
   const handleTokenResponse = useCallback(
     async (tokenResponse) => {
       if (tokenResponse?.error) {
         console.error('Google token error:', tokenResponse.error)
+        toast.error('Google sign-in was cancelled or encountered an error.')
         setLoading(false)
         return
       }
@@ -26,9 +47,17 @@ export default function GoogleAuthButton({
         try {
           setLoading(true)
           await googleLogin({ accessToken: tokenResponse.access_token })
+          toast.success('Signed in successfully with Google')
           navigate('/dashboard', { replace: true })
         } catch (err) {
           console.error('Google sign-in error:', err)
+          const errorMsg = err.response?.data?.message || 'Google sign-in failed. Please try again.'
+          toast.error(errorMsg)
+
+          // If backend still expects credential token (older Render build), prompt One-Tap
+          if (err.response?.status === 400 && window.google?.accounts?.id) {
+            window.google.accounts.id.prompt()
+          }
         } finally {
           setLoading(false)
         }
@@ -42,30 +71,43 @@ export default function GoogleAuthButton({
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID) return
 
-    const setupTokenClient = () => {
-      if (!window.google?.accounts?.oauth2) return
-      try {
-        tokenClientRef.current = window.google.accounts.oauth2.initTokenClient({
-          client_id: GOOGLE_CLIENT_ID,
-          scope: 'email profile openid',
-          callback: handleTokenResponse,
-        })
-      } catch (err) {
-        console.error('Error initializing Google token client:', err)
+    const setupGoogle = () => {
+      if (window.google?.accounts?.oauth2) {
+        try {
+          tokenClientRef.current = window.google.accounts.oauth2.initTokenClient({
+            client_id: GOOGLE_CLIENT_ID,
+            scope: 'email profile openid',
+            callback: handleTokenResponse,
+          })
+        } catch (err) {
+          console.error('Error initializing Google token client:', err)
+        }
+      }
+
+      if (window.google?.accounts?.id) {
+        try {
+          window.google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: handleCredentialResponse,
+            auto_select: false,
+          })
+        } catch (err) {
+          console.error('Error initializing Google ID client:', err)
+        }
       }
     }
 
     if (window.google?.accounts?.oauth2) {
-      setupTokenClient()
+      setupGoogle()
     } else {
       const script = document.createElement('script')
       script.src = 'https://accounts.google.com/gsi/client'
       script.async = true
       script.defer = true
-      script.onload = setupTokenClient
+      script.onload = setupGoogle
       document.body.appendChild(script)
     }
-  }, [handleTokenResponse])
+  }, [handleTokenResponse, handleCredentialResponse])
 
   const handleClick = () => {
     if (loading || disabled) return
