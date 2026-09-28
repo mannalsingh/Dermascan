@@ -671,7 +671,7 @@ exports.googleLogin = async (req, res, next) => {
       await OtpToken.deleteMany({ userId: user._id, type: 'google_login' });
       return res.status(500).json({
         success: false,
-        message: emailErr.message || 'Failed to dispatch verification email. Please verify SMTP configuration and try again.',
+        message: emailErr.message || 'Failed to dispatch verification email. Please try again.',
       });
     }
 
