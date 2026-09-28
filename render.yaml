@@ -42,6 +42,14 @@ services:
         sync: false
       - key: GOOGLE_CLIENT_ID
         sync: false
+      - key: GMAIL_USER
+        sync: false
+      - key: GMAIL_CLIENT_ID
+        sync: false
+      - key: GMAIL_CLIENT_SECRET
+        sync: false
+      - key: GMAIL_REFRESH_TOKEN
+        sync: false
       - key: RESEND_API_KEY
         sync: false
       - key: RESEND_FROM
