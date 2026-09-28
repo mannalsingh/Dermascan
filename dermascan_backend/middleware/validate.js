@@ -19,14 +19,25 @@ const schemas = {
   /** POST /api/auth/send-otp */
   sendOtp: Joi.object({
     email: Joi.string().email().lowercase().trim().required(),
-    type: Joi.string().valid('register', 'login', 'email_change', 'password_reset').required(),
+    type: Joi.string().valid('register', 'login', 'email_change', 'password_reset', 'google_login').required(),
   }),
 
   /** POST /api/auth/verify-otp */
   verifyOtp: Joi.object({
     email: Joi.string().email().lowercase().trim().required(),
     otp: Joi.string().length(4).pattern(/^[0-9]{4}$/).required(),
-    type: Joi.string().valid('register', 'login', 'email_change', 'password_reset').required(),
+    type: Joi.string().valid('register', 'login', 'email_change', 'password_reset', 'google_login').required(),
+  }),
+
+  /** POST /api/auth/google/verify-otp */
+  verifyGoogleOtp: Joi.object({
+    tempToken: Joi.string().required(),
+    otp: Joi.string().length(4).pattern(/^[0-9]{4}$/).required(),
+  }),
+
+  /** POST /api/auth/google/resend-otp */
+  resendGoogleOtp: Joi.object({
+    tempToken: Joi.string().required(),
   }),
 
   /** POST /api/auth/register — now requires a verified otpToken */

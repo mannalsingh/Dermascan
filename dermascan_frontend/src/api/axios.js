@@ -24,7 +24,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/register')) {
       localStorage.removeItem('dermascan_token')
       localStorage.removeItem('dermascan_user')
       window.location.href = '/login'
@@ -37,6 +37,8 @@ export const authAPI = {
   register: (data) => api.post('/api/auth/register', data),
   login: (data) => api.post('/api/auth/login', data),
   googleLogin: (data) => api.post('/api/auth/google', data),
+  verifyGoogleOtp: (data) => api.post('/api/auth/google/verify-otp', data),
+  resendGoogleOtp: (data) => api.post('/api/auth/google/resend-otp', data),
   loginInitiate: (data) => api.post('/api/auth/login-initiate', data),
   loginComplete: (data) => api.post('/api/auth/login-complete', data),
   sendOtp: (data) => api.post('/api/auth/send-otp', data),

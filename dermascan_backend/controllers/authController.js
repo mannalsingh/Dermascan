@@ -20,10 +20,39 @@ const otpGenerator = require('otp-generator');
 const fallbackStore = require('../data/fallbackStore');
 const { OAuth2Client } = require('google-auth-library');
 const { sendOtpEmail } = require('../config/emailService');
+const crypto = require('crypto');
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Generates a cryptographically secure 4-digit numeric OTP.
+ * Never uses Math.random().
+ *
+ * @returns {string} Exactly 4 numeric digits (1000-9999)
+ */
+const generateSecureOtp = () => {
+  return crypto.randomInt(1000, 10000).toString();
+};
+
+/**
+ * Produces a masked email string for safe client-side display.
+ * Example: mannalsingh14@gmail.com -> ma****14@gmail.com
+ *
+ * @param {string} email
+ * @returns {string}
+ */
+const maskEmail = (email) => {
+  if (!email || !email.includes('@')) return email || '';
+  const [local, domain] = email.split('@');
+  if (local.length <= 2) return `${local[0]}*@${domain}`;
+  if (local.length <= 4) return `${local[0]}**${local.slice(-1)}@${domain}`;
+  const visibleStart = local.slice(0, 2);
+  const visibleEnd = local.slice(-2);
+  const maskedMiddle = '*'.repeat(Math.min(4, Math.max(local.length - 4, 2)));
+  return `${visibleStart}${maskedMiddle}${visibleEnd}@${domain}`;
+};
 
 /**
  * Generates a long-lived application JWT (7 d by default).
@@ -601,8 +630,174 @@ exports.googleLogin = async (req, res, next) => {
       await user.save();
     }
 
-    console.log(`[Google Auth] User authenticated successfully: ${user._id} (${cleanEmail})`);
+    console.log(`[Google Auth] User authenticated with Google: ${user._id} (${cleanEmail}). Initiating OTP verification.`);
 
+    // ── Generate cryptographically secure 4-digit numeric OTP ──
+    const otp = generateSecureOtp();
+    const otpHash = await bcrypt.hash(otp, 10);
+
+    // Invalidate any previous active google_login OTPs for this user
+    await OtpToken.deleteMany({ userId: user._id, type: 'google_login' });
+
+    // Store hashed OTP with user reference, 5-minute expiration, and attempt tracker
+    await OtpToken.create({
+      userId: user._id,
+      email: cleanEmail,
+      otpHash,
+      type: 'google_login',
+      attempts: 0,
+      maxAttempts: 5,
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+      used: false,
+    });
+
+    // Send the OTP email using production-grade email service
+    try {
+      await sendOtpEmail(cleanEmail, otp, 'google_login');
+    } catch (emailErr) {
+      console.error('[Google Auth] Failed to dispatch OTP email:', emailErr.message);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to dispatch verification email. Please verify SMTP configuration and try again.',
+      });
+    }
+
+    // Issue short-lived temporary token for OTP verification ONLY (not final application JWT)
+    const tempToken = jwt.sign(
+      {
+        userId: user._id.toString(),
+        email: cleanEmail,
+        purpose: 'google_otp_verify',
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '10m' }
+    );
+
+    return res.status(200).json({
+      success: true,
+      requireOtp: true,
+      tempToken,
+      maskedEmail: maskEmail(cleanEmail),
+      email: cleanEmail,
+      expiresIn: 300,
+      message: "We've sent a 4-digit verification code to your email.",
+    });
+  } catch (error) {
+    console.error('[Google Auth Error]', error.message);
+    next(error);
+  }
+};
+
+/**
+ * POST /api/auth/google/verify-otp
+ * Body: { tempToken, otp }
+ *
+ * Verifies the 4-digit OTP sent after Google authentication.
+ * On success, marks the OTP as used and issues the final application JWT session.
+ */
+exports.verifyGoogleOtp = async (req, res, next) => {
+  try {
+    const { tempToken, otp } = req.body;
+
+    if (!tempToken || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Temporary token and OTP are required.',
+      });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(tempToken, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({
+        success: false,
+        message: 'Verification session has expired. Please sign in with Google again.',
+      });
+    }
+
+    if (decoded.purpose !== 'google_otp_verify' || !decoded.userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid verification session. Please sign in with Google again.',
+      });
+    }
+
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is currently unavailable. Please try again shortly.',
+      });
+    }
+
+    const tokenDoc = await OtpToken.findOne({
+      userId: decoded.userId,
+      type: 'google_login',
+      used: false,
+    });
+
+    if (!tokenDoc) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired verification code. Please request a new code.',
+      });
+    }
+
+    // Enforce 5-minute expiration
+    if (Date.now() > tokenDoc.expiresAt.getTime()) {
+      await OtpToken.deleteOne({ _id: tokenDoc._id });
+      return res.status(400).json({
+        success: false,
+        message: 'Verification code has expired. Please request a new code.',
+      });
+    }
+
+    // Enforce maximum attempt limit (rate limiting / abuse protection)
+    if (tokenDoc.attempts >= tokenDoc.maxAttempts) {
+      await OtpToken.deleteOne({ _id: tokenDoc._id });
+      return res.status(429).json({
+        success: false,
+        message: 'Maximum verification attempts exceeded. Code has been invalidated. Please request a new code.',
+      });
+    }
+
+    // Verify hashed OTP using bcrypt
+    const isMatch = await bcrypt.compare(otp, tokenDoc.otpHash);
+    if (!isMatch) {
+      tokenDoc.attempts += 1;
+      await tokenDoc.save();
+      const remaining = tokenDoc.maxAttempts - tokenDoc.attempts;
+
+      if (remaining <= 0) {
+        await OtpToken.deleteOne({ _id: tokenDoc._id });
+        return res.status(429).json({
+          success: false,
+          message: 'Maximum verification attempts exceeded. Code invalidated. Please request a new code.',
+        });
+      }
+
+      return res.status(400).json({
+        success: false,
+        message: `Incorrect verification code. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`,
+      });
+    }
+
+    // Atomic consumption: Mark OTP as used to prevent replay
+    tokenDoc.used = true;
+    await tokenDoc.save();
+
+    // Fetch user record
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User account not found.',
+      });
+    }
+
+    // Issue final authenticated application JWT
     const token = generateToken({
       id: user._id,
       name: user.name,
@@ -610,13 +805,120 @@ exports.googleLogin = async (req, res, next) => {
       role: user.role,
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
+      message: 'Authentication successful',
       token,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
     });
   } catch (error) {
-    console.error('[Google Auth Error]', error.message);
+    console.error('[verifyGoogleOtp Error]', error.message);
+    next(error);
+  }
+};
+
+/**
+ * POST /api/auth/google/resend-otp
+ * Body: { tempToken }
+ *
+ * Resends a fresh 4-digit OTP with a mandatory 30-second cooldown.
+ */
+exports.resendGoogleOtp = async (req, res, next) => {
+  try {
+    const { tempToken } = req.body;
+
+    if (!tempToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Temporary token is required.',
+      });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(tempToken, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({
+        success: false,
+        message: 'Verification session has expired. Please sign in with Google again.',
+      });
+    }
+
+    if (decoded.purpose !== 'google_otp_verify' || !decoded.userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid verification session.',
+      });
+    }
+
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is currently unavailable.',
+      });
+    }
+
+    // Enforce 30-second cooldown
+    const lastToken = await OtpToken.findOne({
+      userId: decoded.userId,
+      type: 'google_login',
+    }).sort({ createdAt: -1 });
+
+    if (lastToken && lastToken.createdAt) {
+      const elapsedSeconds = Math.floor((Date.now() - lastToken.createdAt.getTime()) / 1000);
+      const cooldown = 30;
+      if (elapsedSeconds < cooldown) {
+        const waitSeconds = cooldown - elapsedSeconds;
+        return res.status(429).json({
+          success: false,
+          message: `Please wait ${waitSeconds} second${waitSeconds === 1 ? '' : 's'} before requesting a new code.`,
+          secondsLeft: waitSeconds,
+        });
+      }
+    }
+
+    // Invalidate previous OTPs for this session
+    await OtpToken.deleteMany({ userId: decoded.userId, type: 'google_login' });
+
+    // Generate new crypto-secure 4-digit OTP
+    const newOtp = generateSecureOtp();
+    const otpHash = await bcrypt.hash(newOtp, 10);
+
+    await OtpToken.create({
+      userId: decoded.userId,
+      email: decoded.email,
+      otpHash,
+      type: 'google_login',
+      attempts: 0,
+      maxAttempts: 5,
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+      used: false,
+    });
+
+    try {
+      await sendOtpEmail(decoded.email, newOtp, 'google_login');
+    } catch (emailErr) {
+      console.error('[resendGoogleOtp] Email delivery failed:', emailErr.message);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to send verification email. Please try again.',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "We've sent a new 4-digit verification code to your email.",
+      expiresIn: 300,
+    });
+  } catch (error) {
+    console.error('[resendGoogleOtp Error]', error.message);
     next(error);
   }
 };

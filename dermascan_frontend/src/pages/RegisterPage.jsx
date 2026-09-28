@@ -102,7 +102,11 @@ export default function RegisterPage() {
     try {
       setGoogleLoading(true)
       setError('')
-      await googleLogin(response.credential)
+      const res = await googleLogin(response.credential)
+      if (res?.requireOtp) {
+        navigate('/login', { state: { googleOtp: res } })
+        return
+      }
       navigate('/dashboard', { replace: true })
     } catch (err) {
       const msg = err.response?.data?.message || 'Google sign-up failed. Please try again.'

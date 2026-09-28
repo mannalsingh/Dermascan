@@ -14,13 +14,14 @@ function validateEmail(email) {
 }
 
 export default function LoginPage() {
-  const { googleLogin, saveAuth } = useAuth()
+  const { googleLogin, verifyGoogleOtp, resendGoogleOtp, saveAuth } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const from = location.state?.from?.pathname || '/dashboard'
 
-  // View state: 'credentials' | 'otp' | 'forgot' | 'reset'
-  const [view, setView] = useState('credentials')
+  // View state: 'credentials' | 'otp' | 'google_otp' | 'forgot' | 'reset'
+  const [googleOtpData, setGoogleOtpData] = useState(location.state?.googleOtp || null)
+  const [view, setView] = useState(location.state?.googleOtp ? 'google_otp' : 'credentials')
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPwd, setShowPwd] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -97,7 +98,12 @@ export default function LoginPage() {
     try {
       setGoogleLoading(true)
       setError('')
-      await googleLogin(response.credential)
+      const res = await googleLogin(response.credential)
+      if (res?.requireOtp) {
+        setGoogleOtpData(res)
+        setView('google_otp')
+        return
+      }
       navigate(from, { replace: true })
     } catch (err) {
       const msg = err.response?.data?.message || 'Google sign-in was unable to complete. Please try again.'
@@ -218,12 +224,14 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-slate-900">
             {view === 'credentials' && 'Welcome back'}
             {view === 'otp' && 'Security Verification'}
+            {view === 'google_otp' && 'Two-Factor Authentication'}
             {view === 'forgot' && 'Reset your password'}
             {view === 'reset' && 'Create new password'}
           </h1>
           <p className="text-slate-500 text-sm mt-1">
             {view === 'credentials' && 'Sign in to access your skin screening portal'}
             {view === 'otp' && 'Please confirm your identity with the security code'}
+            {view === 'google_otp' && 'Confirm your Google sign-in with the verification code'}
             {view === 'forgot' && 'Enter your email to receive a recovery code'}
             {view === 'reset' && 'Enter the 4-digit code and set your new password'}
           </p>
@@ -251,7 +259,14 @@ export default function LoginPage() {
             <div className="animate-fade-in-up">
               {/* Google Sign In Button */}
               <div className="mb-2">
-                <GoogleAuthButton className="w-full" />
+                <GoogleAuthButton
+                  className="w-full"
+                  onOtpRequired={(data) => {
+                    setError('')
+                    setGoogleOtpData(data)
+                    setView('google_otp')
+                  }}
+                />
 
                 <div className="flex items-center gap-3 my-5">
                   <div className="flex-1 h-px bg-slate-200" />
@@ -344,6 +359,31 @@ export default function LoginPage() {
               type="login"
               onVerified={handleOtpVerified}
               onBack={() => { setError(''); setView('credentials'); }}
+            />
+          )}
+
+          {/* VIEW 2B: Google Sign-In 2-Factor Authentication OTP Verification */}
+          {view === 'google_otp' && googleOtpData && (
+            <OtpInput
+              email={googleOtpData.email}
+              maskedEmail={googleOtpData.maskedEmail}
+              type="google_login"
+              title="Verify your email"
+              message="We've sent a 4-digit verification code to your email."
+              initialExpiry={googleOtpData.expiresIn || 300}
+              initialCooldown={30}
+              onVerifyCustom={async (code) => {
+                await verifyGoogleOtp(googleOtpData.tempToken, code)
+                navigate(from, { replace: true })
+              }}
+              onResendCustom={async () => {
+                await resendGoogleOtp(googleOtpData.tempToken)
+              }}
+              onBack={() => {
+                setError('')
+                setGoogleOtpData(null)
+                setView('credentials')
+              }}
             />
           )}
 

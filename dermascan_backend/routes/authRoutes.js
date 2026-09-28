@@ -29,6 +29,8 @@ const {
   loginComplete,
   forgotPassword,
   resetPassword,
+  verifyGoogleOtp,
+  resendGoogleOtp,
 } = require('../controllers/authController');
 
 const { validate, schemas } = require('../middleware/validate');
@@ -51,7 +53,9 @@ router.post('/login-complete', validate(schemas.loginComplete),  loginComplete);
 // ── Legacy single-step login (backward-compat) ──────────────────────────────
 router.post('/login',  login);
 
-// ── Google OAuth (no OTP) ───────────────────────────────────────────────────
+// ── Google OAuth + 2FA OTP verification flow ─────────────────────────────────
 router.post('/google', googleLogin);
+router.post('/google/verify-otp', validate(schemas.verifyGoogleOtp), verifyGoogleOtp);
+router.post('/google/resend-otp', validate(schemas.resendGoogleOtp), resendGoogleOtp);
 
 module.exports = router;

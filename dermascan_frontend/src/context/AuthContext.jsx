@@ -59,11 +59,25 @@ export function AuthProvider({ children }) {
           ? { accessToken: tokenData }
           : { credential: tokenData })
     const res = await authAPI.googleLogin(payload)
+    if (res.data?.requireOtp) {
+      return res.data
+    }
     const { token: t, user: u } = res.data
     saveAuth(t, u)
     return res.data
   }, [saveAuth])
 
+  const verifyGoogleOtp = useCallback(async (tempToken, otp) => {
+    const res = await authAPI.verifyGoogleOtp({ tempToken, otp })
+    const { token: t, user: u } = res.data
+    saveAuth(t, u)
+    return res.data
+  }, [saveAuth])
+
+  const resendGoogleOtp = useCallback(async (tempToken) => {
+    const res = await authAPI.resendGoogleOtp({ tempToken })
+    return res.data
+  }, [])
 
   const logout = useCallback(() => {
     clearAuth()
@@ -101,6 +115,8 @@ export function AuthProvider({ children }) {
     register,
     login,
     googleLogin,
+    verifyGoogleOtp,
+    resendGoogleOtp,
     logout,
     saveAuth,
     sendOtp,

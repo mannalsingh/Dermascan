@@ -9,6 +9,7 @@ export default function GoogleAuthButton({
   className = '',
   buttonText = 'Continue with Google',
   disabled = false,
+  onOtpRequired = null,
 }) {
   const [loading, setLoading] = useState(false)
   const tokenClientRef = useRef(null)
@@ -20,7 +21,16 @@ export default function GoogleAuthButton({
       if (response?.credential) {
         try {
           setLoading(true)
-          await googleLogin({ credential: response.credential })
+          const res = await googleLogin({ credential: response.credential })
+          if (res?.requireOtp) {
+            toast.info("We've sent a 4-digit verification code to your email.")
+            if (onOtpRequired) {
+              onOtpRequired(res)
+            } else {
+              navigate('/login', { state: { googleOtp: res } })
+            }
+            return
+          }
           toast.success('Signed in successfully with Google')
           navigate('/dashboard', { replace: true })
         } catch (err) {
@@ -31,7 +41,7 @@ export default function GoogleAuthButton({
         }
       }
     },
-    [googleLogin, navigate]
+    [googleLogin, navigate, onOtpRequired]
   )
 
   const handleTokenResponse = useCallback(
@@ -46,7 +56,16 @@ export default function GoogleAuthButton({
       if (tokenResponse?.access_token) {
         try {
           setLoading(true)
-          await googleLogin({ accessToken: tokenResponse.access_token })
+          const res = await googleLogin({ accessToken: tokenResponse.access_token })
+          if (res?.requireOtp) {
+            toast.info("We've sent a 4-digit verification code to your email.")
+            if (onOtpRequired) {
+              onOtpRequired(res)
+            } else {
+              navigate('/login', { state: { googleOtp: res } })
+            }
+            return
+          }
           toast.success('Signed in successfully with Google')
           navigate('/dashboard', { replace: true })
         } catch (err) {
@@ -65,7 +84,7 @@ export default function GoogleAuthButton({
         setLoading(false)
       }
     },
-    [googleLogin, navigate]
+    [googleLogin, navigate, onOtpRequired]
   )
 
   useEffect(() => {

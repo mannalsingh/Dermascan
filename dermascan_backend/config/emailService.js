@@ -1,104 +1,111 @@
 /**
  * emailService.js
  *
- * Nodemailer-based email service for DermaScan.
+ * Production-grade Nodemailer email service for DermaScan AI.
+ * Handles transactional email delivery for:
+ *  - 'google_login': 2FA verification code after Google OAuth
+ *  - 'login': Standard password 2FA verification code
+ *  - 'register': New user email verification
+ *  - 'email_change': Profile email update confirmation
+ *  - 'password_reset': Password recovery code
  *
- * Transporter strategy:
- *  - If SMTP_HOST is set in env → use generic SMTP (works with any provider).
- *  - Otherwise → fall back to Gmail (uses EMAIL_USER / EMAIL_PASS, which
- *    should be a Gmail App Password when 2FA is enabled on the account).
+ * Configuration:
+ *  Reads EMAIL_* or SMTP_* environment variables.
+ *  Falls back to Gmail service if no custom SMTP host is defined.
  */
 
 const nodemailer = require('nodemailer');
 
-// ---------------------------------------------------------------------------
-// Transporter factory
-// ---------------------------------------------------------------------------
-
 /**
  * Creates and returns a configured nodemailer transporter.
- * Call this per-send (nodemailer manages the connection pool internally).
- *
- * @returns {nodemailer.Transporter}
+ * Reusable pool with timeout configuration for high reliability.
  */
 const createTransporter = () => {
-  if (process.env.SMTP_HOST) {
-    // Generic SMTP — suitable for SendGrid, Mailgun, AWS SES, etc.
+  const host = process.env.EMAIL_HOST || process.env.SMTP_HOST;
+  const port = parseInt(process.env.EMAIL_PORT || process.env.SMTP_PORT, 10);
+  const user = process.env.EMAIL_USER || process.env.SMTP_USER;
+  const pass = process.env.EMAIL_PASS || process.env.SMTP_PASS;
+
+  if (host) {
     return nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT, 10) || 587,
-      secure: parseInt(process.env.SMTP_PORT, 10) === 465, // true for port 465 (TLS)
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
+      host,
+      port: port || 587,
+      secure: port === 465,
+      auth: { user, pass },
+      tls: {
+        rejectUnauthorized: process.env.NODE_ENV === 'production',
       },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     });
   }
 
-  // Fallback: Gmail with an App Password
+  // Fallback: Gmail service
   return nodemailer.createTransport({
     service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
+    auth: { user, pass },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
   });
 };
 
-// ---------------------------------------------------------------------------
-// HTML Template helpers
-// ---------------------------------------------------------------------------
-
 /**
- * Returns per-type copy (subject line + descriptive blurb shown above the OTP).
- *
- * @param {'register'|'login'|'email_change'} type
- * @returns {{ subject: string, headline: string, body: string }}
+ * Returns copy metadata for each verification flow.
  */
 const getEmailCopy = (type) => {
   switch (type) {
-    case 'register':
+    case 'google_login':
       return {
-        subject: 'Verify your DermaScan account',
-        headline: 'Welcome to DermaScan! 🎉',
-        body: 'You\'re one step away from creating your account. Use the verification code below to confirm your email address and get started.',
+        subject: 'Your DermaScan AI verification code',
+        headline: 'Verify your email',
+        badge: 'Google Sign-In Verification',
+        body: 'You recently initiated sign-in to DermaScan AI with your Google account. Please enter the 4-digit verification code below to confirm your identity and complete your login.',
       };
     case 'login':
       return {
-        subject: 'Your DermaScan login code',
-        headline: 'Secure Login Code',
-        body: 'A login attempt was made on your DermaScan account. Use the code below to complete sign-in. If this wasn\'t you, please ignore this email and consider changing your password.',
+        subject: 'Your DermaScan AI verification code',
+        headline: 'Verify your email',
+        badge: 'Secure Login Verification',
+        body: 'A login attempt was initiated on your DermaScan AI account. Please enter the 4-digit verification code below to access your account portal.',
+      };
+    case 'register':
+      return {
+        subject: 'Your DermaScan AI verification code',
+        headline: 'Verify your email',
+        badge: 'Account Registration',
+        body: "Welcome to DermaScan AI. You're one step away from activating your account. Please use the 4-digit code below to confirm your email address.",
       };
     case 'email_change':
       return {
-        subject: 'Confirm your new email — DermaScan',
-        headline: 'Confirm Your New Email Address',
-        body: 'We received a request to update the email address linked to your DermaScan account. Use the code below to confirm your new email address.',
+        subject: 'Your DermaScan AI verification code',
+        headline: 'Verify your email',
+        badge: 'Email Address Update',
+        body: 'We received a request to update the email address linked to your DermaScan AI account. Use the code below to confirm this change.',
       };
     case 'password_reset':
       return {
-        subject: 'Reset your DermaScan password',
-        headline: 'Password Reset Request',
-        body: 'We received a request to reset your password for your DermaScan account. Use the 4-digit code below to set a new password. If you did not make this request, you can safely ignore this email.',
+        subject: 'Your DermaScan AI verification code',
+        headline: 'Reset your password',
+        badge: 'Password Recovery',
+        body: 'We received a request to reset your password for DermaScan AI. Use the 4-digit verification code below to choose a new password.',
       };
     default:
       return {
-        subject: 'Your DermaScan verification code',
-        headline: 'Verification Code',
-        body: 'Use the code below to complete your action on DermaScan.',
+        subject: 'Your DermaScan AI verification code',
+        headline: 'Verify your email',
+        badge: 'Security Verification',
+        body: 'Please use the 4-digit verification code below to complete your authentication request on DermaScan AI.',
       };
   }
 };
 
 /**
- * Builds a production-quality responsive HTML email body.
- *
- * @param {string} otp   4-digit numeric OTP (plain text — shown once in email)
- * @param {'register'|'login'|'email_change'} type
- * @returns {string} Full HTML document string
+ * Builds responsive, accessible, clinical-grade HTML email template.
  */
 const buildHtmlTemplate = (otp, type) => {
-  const { headline, body } = getEmailCopy(type);
+  const { headline, badge, body } = getEmailCopy(type);
   const year = new Date().getFullYear();
 
   return `<!DOCTYPE html>
@@ -107,243 +114,203 @@ const buildHtmlTemplate = (otp, type) => {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>DermaScan — Verification Code</title>
+  <title>DermaScan AI — Verification Code</title>
   <style>
-    /* Reset */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background-color: #f0f9f8;
-      color: #1a1a2e;
+      background-color: #f8fafc;
+      color: #0f172a;
       -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
     }
-    a { color: #0f766e; text-decoration: none; }
-    /* Responsive wrapper */
     .wrapper {
-      width: 100%;
-      max-width: 600px;
+      max-width: 580px;
       margin: 32px auto;
       padding: 0 16px;
     }
-    /* Card */
     .card {
       background: #ffffff;
       border-radius: 16px;
       overflow: hidden;
-      box-shadow: 0 4px 24px rgba(15, 118, 110, 0.10);
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
-    /* Header gradient */
     .header {
-      background: linear-gradient(135deg, #134e4a 0%, #0f766e 60%, #0d9488 100%);
-      padding: 36px 40px 28px;
+      background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+      padding: 32px 28px;
       text-align: center;
-    }
-    .header-brand {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .brand-icon {
-      font-size: 2rem;
-      line-height: 1;
-    }
-    .brand-name {
-      font-size: 1.6rem;
-      font-weight: 700;
       color: #ffffff;
-      letter-spacing: -0.02em;
     }
-    .brand-tagline {
-      font-size: 0.78rem;
-      color: rgba(255,255,255,0.72);
-      margin-top: 4px;
-      letter-spacing: 0.06em;
+    .logo-badge {
+      display: inline-block;
+      width: 44px;
+      height: 44px;
+      line-height: 44px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 12px;
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+    .header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+    .header p {
+      font-size: 13px;
+      color: #ccfbf1;
+      font-weight: 500;
       text-transform: uppercase;
+      letter-spacing: 1px;
     }
-    /* Body */
-    .body {
-      padding: 40px 40px 32px;
+    .content {
+      padding: 36px 32px;
     }
-    .headline {
-      font-size: 1.35rem;
+    .tag {
+      display: inline-block;
+      padding: 4px 12px;
+      background: #f0fdfa;
+      border: 1px solid #ccfbf1;
+      color: #0f766e;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .content h2 {
+      font-size: 20px;
       font-weight: 700;
       color: #0f172a;
       margin-bottom: 12px;
     }
-    .description {
-      font-size: 0.95rem;
-      line-height: 1.65;
+    .content p {
+      font-size: 15px;
       color: #475569;
-      margin-bottom: 32px;
-    }
-    /* OTP box */
-    .otp-label {
-      font-size: 0.72rem;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: #0f766e;
-      margin-bottom: 10px;
-    }
-    .otp-wrapper {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 32px;
+      margin-bottom: 24px;
     }
     .otp-box {
-      background: #f0fdf4;
-      border: 2px solid #0f766e;
-      border-radius: 12px;
-      padding: 20px 40px;
+      background: #f8fafc;
+      border: 2px dashed #cbd5e1;
+      border-radius: 14px;
+      padding: 24px;
       text-align: center;
+      margin: 28px 0;
+    }
+    .otp-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
     }
     .otp-code {
-      font-family: 'Courier New', 'Lucida Console', monospace;
-      font-size: 2.5rem;
-      font-weight: 700;
-      letter-spacing: 0.5em;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+      font-size: 40px;
+      font-weight: 800;
       color: #0f766e;
-      /* Nudge the trailing space from letter-spacing so OTP looks centred */
-      padding-left: 0.5em;
-      line-height: 1.1;
+      letter-spacing: 12px;
+      padding-left: 12px;
     }
-    /* Divider */
-    .divider {
-      border: none;
-      border-top: 1px solid #e2e8f0;
-      margin: 0 0 28px;
+    .timer-notice {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #0f766e;
+      font-weight: 600;
+      margin-top: 10px;
     }
-    /* Footer note */
-    .footer-note {
-      font-size: 0.85rem;
-      color: #64748b;
-      line-height: 1.6;
+    .security-notice {
+      background: #f1f5f9;
+      border-left: 4px solid #0f766e;
+      padding: 14px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #475569;
+      margin-top: 24px;
+    }
+    .footer {
       text-align: center;
-      background: #f8fafc;
-      border-radius: 10px;
-      padding: 16px 20px;
-    }
-    .footer-note strong {
-      color: #0f172a;
-    }
-    /* Page footer */
-    .page-footer {
-      text-align: center;
-      padding: 20px 16px 32px;
-      font-size: 0.75rem;
+      padding: 24px 16px;
+      font-size: 12px;
       color: #94a3b8;
-      line-height: 1.6;
-    }
-    .page-footer a {
-      color: #94a3b8;
-      text-decoration: underline;
-    }
-    /* Mobile tweaks */
-    @media only screen and (max-width: 480px) {
-      .body { padding: 28px 24px 24px; }
-      .header { padding: 28px 24px 22px; }
-      .otp-code { font-size: 2rem; letter-spacing: 0.4em; }
-      .otp-box { padding: 16px 28px; }
     }
   </style>
 </head>
 <body>
   <div class="wrapper">
-    <!-- Card -->
     <div class="card">
-
-      <!-- ── Header ── -->
       <div class="header">
-        <div class="header-brand">
-          <span class="brand-icon">⚕️</span>
-          <span class="brand-name">DermaScan</span>
-        </div>
-        <div class="brand-tagline">AI-Powered Skin Analysis</div>
+        <div class="logo-badge">🔬</div>
+        <h1>DermaScan AI</h1>
+        <p>Clinical Skin Health Intelligence</p>
       </div>
 
-      <!-- ── Body ── -->
-      <div class="body">
-        <div class="headline">${headline}</div>
-        <p class="description">${body}</p>
+      <div class="content">
+        <span class="tag">${badge}</span>
+        <h2>${headline}</h2>
+        <p>${body}</p>
 
-        <div class="otp-label">Your verification code</div>
-        <div class="otp-wrapper">
-          <div class="otp-box">
-            <div class="otp-code">${otp}</div>
-          </div>
+        <div class="otp-box">
+          <div class="otp-label">Your 4-Digit Verification Code</div>
+          <div class="otp-code">${otp}</div>
+          <div class="timer-notice">⏱️ This code expires in 5 minutes</div>
         </div>
 
-        <hr class="divider" />
-
-        <div class="footer-note">
-          ⏱ <strong>This code expires in 2 minutes.</strong><br />
-          If you did not request this, please ignore this email — your account is safe.
+        <div class="security-notice">
+          <strong>Security Notice:</strong> If you did not request this verification code, you can safely ignore this email. Never share this code with anyone. DermaScan AI representatives will never ask for your code.
         </div>
       </div>
     </div>
 
-    <!-- ── Page footer ── -->
-    <div class="page-footer">
-      © ${year} DermaScan AI &nbsp;·&nbsp; All rights reserved<br />
-      This is an automated message — please do not reply directly to this email.
+    <div class="footer">
+      <p>© ${year} DermaScan AI. All rights reserved.</p>
+      <p style="margin-top: 4px;">Automated transactional message — please do not reply directly to this email.</p>
     </div>
   </div>
 </body>
 </html>`;
 };
 
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
-
 /**
  * Sends an OTP email to the specified recipient.
  *
- * @param {string} to   Recipient email address
- * @param {string} otp  4-digit numeric OTP (plain text)
- * @param {'register'|'login'|'email_change'} type
+ * @param {string} to Recipient email address
+ * @param {string} otp 4-digit plain numeric OTP
+ * @param {'google_login'|'login'|'register'|'email_change'|'password_reset'} type
  * @returns {Promise<void>}
- * @throws Will re-throw if the underlying nodemailer transport fails.
  */
-const sendOtpEmail = async (to, otp, type) => {
+const sendOtpEmail = async (to, otp, type = 'google_login') => {
   const transporter = createTransporter();
   const { subject } = getEmailCopy(type);
   const html = buildHtmlTemplate(otp, type);
 
-  // Determine the "from" display name/address
   const from =
+    process.env.EMAIL_FROM ||
     process.env.SMTP_FROM ||
-    `DermaScan AI <${process.env.EMAIL_USER || process.env.SMTP_USER}>`;
+    `DermaScan AI <${process.env.EMAIL_USER || process.env.SMTP_USER || 'noreply@dermascan.ai'}>`;
 
   const mailOptions = {
     from,
     to,
     subject,
     html,
-    // Plain-text fallback for email clients that block HTML
-    text: `Your DermaScan verification code is: ${otp}\n\nThis code expires in 2 minutes.\nIf you did not request this, please ignore this email.`,
+    text: `Your DermaScan AI verification code is: ${otp}\n\nThis code expires in 5 minutes.\n\nIf you did not request this code, you can safely ignore this email — your account remains secure.`,
   };
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`[Email Service] OTP successfully delivered to ${to} (${type})`);
+    console.log(`[Email Service] OTP successfully delivered to recipient (${type})`);
   } catch (err) {
-    console.warn(`[Email Service] SMTP delivery failed (${err.message}). Generated OTP for ${to} (${type}): [${otp}]`);
-    // If SMTP credentials are dummy, placeholder, or invalid, allow the flow to proceed in dev/demo mode
-    if (
-      !process.env.EMAIL_PASS ||
-      process.env.EMAIL_PASS === 'your_gmail_app_password_here' ||
-      err.code === 'EAUTH' ||
-      err.responseCode === 535 ||
-      err.code === 'ESOCKET'
-    ) {
-      console.log(`[Email Service] Proceeding with OTP [${otp}] stored in database.`);
-      return;
-    }
-    throw err;
+    console.error(`[Email Service] SMTP delivery error:`, err.message);
+    throw new Error('Failed to send verification email. Please verify SMTP configuration.');
   }
 };
-
-// ---------------------------------------------------------------------------
 
 module.exports = { createTransporter, sendOtpEmail };
