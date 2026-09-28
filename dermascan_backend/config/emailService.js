@@ -9,14 +9,17 @@
  *  - 'email_change': Profile email update confirmation
  *  - 'password_reset': Password recovery code
  *
- * CRITICAL PRODUCTION NETWORK ENFORCEMENT:
- *  - Forces Node.js DNS resolution to IPv4 first (AF_INET) to prevent ENETUNREACH on IPv6.
- *  - Custom lookup function explicitly resolves A-records (IPv4) only.
- *  - Connects strictly to smtp.gmail.com on PORT 465 using implicit TLS (secure: true).
- *  - NO PORT 587. NO FALLBACK TO 587.
- *  - Strict connection, greeting, and socket timeouts (8-10 seconds).
- *  - Strips whitespace/spaces from Google App Passwords automatically.
- *  - Safe diagnostics for /health without exposing passwords or OTPs.
+ * STRICT PRODUCTION NETWORK & IPV4 ENFORCEMENT:
+ *  1. Node.js DNS default result order set to IPv4-first.
+ *  2. Nodemailer's internal resolver (shared.resolveHostname) patched to resolve
+ *     IPv4 (AF_INET) ONLY. This completely eliminates IPv6 addresses from
+ *     Nodemailer's connection attempt list and fallback address array, preventing
+ *     "ESOCKET: connect ENETUNREACH 2607:... - Local (:::0)" on Render containers.
+ *  3. Connects strictly to smtp.gmail.com on PORT 465 using implicit TLS (secure: true).
+ *  4. NO PORT 587. NO FALLBACK TO PORT 587.
+ *  5. Strict production timeouts (8-10 seconds) so network errors fail immediately.
+ *  6. Strips whitespace from Google App Passwords automatically.
+ *  7. Exposes safe diagnostics for /health without leaking credentials or OTPs.
  */
 
 const dns = require('dns');
@@ -27,22 +30,44 @@ if (typeof dns.setDefaultResultOrder === 'function') {
   dns.setDefaultResultOrder('ipv4first');
 }
 
-/**
- * Custom DNS lookup handler for Nodemailer.
- * Forces getaddrinfo to return IPv4 (AF_INET) records only.
- * Properly handles both single address and array (all: true) Node socket options.
- */
-const ipv4Lookup = (hostname, options, callback) => {
-  const cb = typeof options === 'function' ? options : callback;
-  const opts = typeof options === 'object' ? { ...options, family: 4 } : { family: 4 };
+// 2. Intercept Nodemailer's internal hostname resolver to GUARANTEE IPv4-only resolution.
+// By default, Nodemailer queries both IPv4 and IPv6, appending IPv6 to fallback addresses.
+// On cloud containers with no IPv6 route, connecting to those fallbacks throws ENETUNREACH.
+// This patch ensures only verified IPv4 addresses are returned.
+try {
+  const shared = require('nodemailer/lib/shared');
+  if (shared && typeof shared.resolveHostname === 'function') {
+    shared.resolveHostname = function (options, callback) {
+      options = options || {};
+      const host = options.host || 'smtp.gmail.com';
+      const servername = options.servername || host;
 
-  dns.lookup(hostname, opts, (err, address, family) => {
-    if (err) {
-      console.error(`[SMTP DNS] Failed to resolve ${hostname} to IPv4:`, err.message);
-    }
-    cb(err, address, family);
-  });
-};
+      dns.lookup(host, { family: 4, all: true }, (err, addresses) => {
+        if (err) {
+          console.error(`[SMTP IPv4 Resolver] Failed to resolve ${host} to IPv4:`, err.message);
+          return callback(err);
+        }
+
+        const ipv4List = Array.isArray(addresses)
+          ? addresses.filter(a => a && (a.family === 4 || a.family === 'IPv4')).map(a => a.address)
+          : [addresses];
+
+        if (!ipv4List.length) {
+          return callback(new Error(`No IPv4 address resolved for ${host}`));
+        }
+
+        return callback(null, {
+          host: ipv4List[0],
+          servername,
+          cached: false,
+          _addresses: ipv4List, // Only IPv4 fallbacks
+        });
+      });
+    };
+  }
+} catch (patchErr) {
+  console.warn('[SMTP Resolver Patch] Could not patch internal resolver:', patchErr.message);
+}
 
 /**
  * Reads, prioritizes, and sanitizes SMTP environment variables.
@@ -94,8 +119,6 @@ const createTransporter = () => {
     host: config.host,
     port: config.port,
     secure: config.secure, // true for 465
-    lookup: ipv4Lookup,    // Forces IPv4 DNS lookup
-    family: 4,             // Forces IPv4 socket binding
     auth: {
       user: config.user,
       pass: config.pass,
@@ -462,5 +485,4 @@ module.exports = {
   getSmtpDiagnosticStatus,
   verifySmtpOnStartup,
   getSanitizedConfig,
-  ipv4Lookup,
 };
