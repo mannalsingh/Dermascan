@@ -8,7 +8,7 @@ import OtpInput from '../components/OtpInput'
 import { toast, Toaster } from 'sonner'
 import {
   User, Mail, Phone, MapPin, Calendar, Save,
-  Edit3, X, ShieldCheck
+  Edit3, X, ShieldCheck, Lock, Eye, EyeOff, KeyRound
 } from 'lucide-react'
 
 // ── Loading skeleton ──────────────────────────────────────────────────────────
@@ -36,6 +36,124 @@ function ProfileSkeleton() {
         <div className="h-11 bg-gray-200 rounded-xl" />
       </div>
     </div>
+  )
+}
+
+function PasswordChangeForm() {
+  const [form, setForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
+  const [showCurrent, setShowCurrent] = useState(false)
+  const [showNew, setShowNew] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!form.currentPassword) {
+      toast.error('Please enter your current password.')
+      return
+    }
+    if (form.newPassword.length < 8) {
+      toast.error('New password must be at least 8 characters long.')
+      return
+    }
+    if (form.newPassword !== form.confirmPassword) {
+      toast.error('New passwords do not match.')
+      return
+    }
+
+    try {
+      setLoading(true)
+      const res = await userAPI.changePassword({
+        currentPassword: form.currentPassword,
+        newPassword: form.newPassword,
+      })
+      toast.success(res.data?.message || 'Password updated successfully!')
+      setForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update password. Please check your current password.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="label" htmlFor="currentPassword">
+          <Lock className="inline h-3.5 w-3.5 mr-1 text-teal-600" />Current Password
+        </label>
+        <div className="relative">
+          <input
+            id="currentPassword"
+            type={showCurrent ? 'text' : 'password'}
+            value={form.currentPassword}
+            onChange={(e) => setForm(p => ({ ...p, currentPassword: e.target.value }))}
+            className="input-field pr-10"
+            placeholder="••••••••••••"
+            maxLength={128}
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setShowCurrent(!showCurrent)}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            tabIndex={-1}
+          >
+            {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <label className="label" htmlFor="newPassword">
+          <KeyRound className="inline h-3.5 w-3.5 mr-1 text-teal-600" />New Password
+        </label>
+        <div className="relative">
+          <input
+            id="newPassword"
+            type={showNew ? 'text' : 'password'}
+            value={form.newPassword}
+            onChange={(e) => setForm(p => ({ ...p, newPassword: e.target.value }))}
+            className="input-field pr-10"
+            placeholder="Min. 8 characters"
+            maxLength={128}
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setShowNew(!showNew)}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            tabIndex={-1}
+          >
+            {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <label className="label" htmlFor="confirmPassword">
+          <KeyRound className="inline h-3.5 w-3.5 mr-1 text-teal-600" />Confirm New Password
+        </label>
+        <input
+          id="confirmPassword"
+          type={showNew ? 'text' : 'password'}
+          value={form.confirmPassword}
+          onChange={(e) => setForm(p => ({ ...p, confirmPassword: e.target.value }))}
+          className="input-field"
+          placeholder="Repeat new password"
+          maxLength={128}
+          required
+        />
+      </div>
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="btn-primary w-full py-2.5 flex items-center justify-center gap-2 text-sm font-semibold rounded-xl"
+      >
+        {loading ? <LoadingSpinner size="sm" /> : <Save className="h-4 w-4" />}
+        {loading ? 'Updating Password…' : 'Update Password'}
+      </button>
+    </form>
   )
 }
 
@@ -333,9 +451,9 @@ export default function ProfilePage() {
 
           {/* OTP panel */}
           {emailPanel === 'otp' && (
-            <div className="animate-fade-in-scale rounded-xl bg-gradient-to-br from-slate-800 to-teal-900 p-6">
+            <div className="animate-fade-in-scale rounded-2xl bg-slate-50 border border-slate-200 p-6">
               {emailError && (
-                <div className="mb-4 p-3 bg-red-500/20 border border-red-400/40 rounded-lg text-sm text-red-200 text-center">
+                <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-sm text-rose-700 text-center font-medium">
                   {emailError}
                 </div>
               )}
@@ -347,6 +465,16 @@ export default function ProfilePage() {
               />
             </div>
           )}
+        </div>
+
+        {/* ── Security & Password card ──────────────────────────────────────── */}
+        <div className="card rounded-2xl shadow-sm mb-6">
+          <div className="border-l-4 border-teal-500 pl-3 mb-5">
+            <h2 className="font-bold text-gray-900 text-lg">Security & Password</h2>
+            <p className="text-xs text-gray-500">Update your account password</p>
+          </div>
+
+          <PasswordChangeForm />
         </div>
 
         {/* ── Account Information card ──────────────────────────────────────── */}

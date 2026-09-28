@@ -75,6 +75,12 @@ const getEmailCopy = (type) => {
         headline: 'Confirm Your New Email Address',
         body: 'We received a request to update the email address linked to your DermaScan account. Use the code below to confirm your new email address.',
       };
+    case 'password_reset':
+      return {
+        subject: 'Reset your DermaScan password',
+        headline: 'Password Reset Request',
+        body: 'We received a request to reset your password for your DermaScan account. Use the 4-digit code below to set a new password. If you did not make this request, you can safely ignore this email.',
+      };
     default:
       return {
         subject: 'Your DermaScan verification code',

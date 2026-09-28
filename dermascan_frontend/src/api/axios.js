@@ -41,11 +41,14 @@ export const authAPI = {
   loginComplete: (data) => api.post('/api/auth/login-complete', data),
   sendOtp: (data) => api.post('/api/auth/send-otp', data),
   verifyOtp: (data) => api.post('/api/auth/verify-otp', data),
+  forgotPassword: (data) => api.post('/api/auth/forgot-password', data),
+  resetPassword: (data) => api.post('/api/auth/reset-password', data),
 }
 
 export const userAPI = {
   getProfile: () => api.get('/api/user/profile'),
   updateProfile: (data) => api.put('/api/user/profile', data),
+  changePassword: (data) => api.post('/api/user/change-password', data),
   requestEmailChange: (data) => api.post('/api/user/request-email-change', data),
   confirmEmailChange: (data) => api.post('/api/user/confirm-email-change', data),
 }

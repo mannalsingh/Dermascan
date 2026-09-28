@@ -10,14 +10,14 @@ import {
   TrendingUp, AlertTriangle, CheckCircle, ArrowRight, Scan
 } from 'lucide-react'
 
-function StatCard({ icon: Icon, label, value, sub, color = 'blue' }) {
+function StatCard({ icon: Icon, label, value, sub, color = 'teal' }) {
   const colors = {
-    blue:  { bg: 'bg-blue-50',   icon: 'text-blue-600',  val: 'text-blue-700' },
-    green: { bg: 'bg-green-50',  icon: 'text-green-600', val: 'text-green-700' },
-    red:   { bg: 'bg-red-50',    icon: 'text-red-600',   val: 'text-red-700' },
     teal:  { bg: 'bg-teal-50',   icon: 'text-teal-600',  val: 'text-teal-700' },
+    green: { bg: 'bg-emerald-50', icon: 'text-emerald-600', val: 'text-emerald-700' },
+    red:   { bg: 'bg-rose-50',   icon: 'text-rose-600',   val: 'text-rose-700' },
+    blue:  { bg: 'bg-sky-50',    icon: 'text-sky-600',    val: 'text-sky-700' },
   }
-  const c = colors[color] || colors.blue
+  const c = colors[color] || colors.teal
   return (
     <div className="card flex items-center gap-4">
       <div className={`p-3 rounded-xl ${c.bg}`}>
@@ -74,7 +74,7 @@ export default function DashboardPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard
-            icon={Activity} label="Total Screenings" color="blue"
+            icon={Activity} label="Total Screenings" color="teal"
             value={summary?.totalScreenings ?? 0}
             sub="All time"
           />
@@ -97,16 +97,16 @@ export default function DashboardPage() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <Link to="/screening" className="card-hover border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 group">
+        <Link to="/screening" className="card-hover border-teal-200 bg-gradient-to-br from-teal-50 to-emerald-50 group">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-blue-700 rounded-lg group-hover:bg-blue-800 transition-colors">
+            <div className="p-2.5 bg-teal-600 rounded-lg group-hover:bg-teal-700 transition-colors">
               <Upload className="h-5 w-5 text-white" />
             </div>
             <div>
-              <p className="font-semibold text-blue-900">New Scan</p>
-              <p className="text-xs text-blue-600">Upload & analyze image</p>
+              <p className="font-semibold text-teal-900">New Scan</p>
+              <p className="text-xs text-teal-600">Upload & analyze image</p>
             </div>
-            <ArrowRight className="h-4 w-4 text-blue-400 ml-auto" />
+            <ArrowRight className="h-4 w-4 text-teal-400 ml-auto" />
           </div>
         </Link>
 
@@ -140,7 +140,7 @@ export default function DashboardPage() {
       <div className="card">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-gray-900 text-lg">Recent Screenings</h2>
-          <Link to="/history" className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+          <Link to="/history" className="text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1">
             View all <ArrowRight className="h-3 w-3" />
           </Link>
         </div>

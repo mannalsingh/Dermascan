@@ -17,6 +17,7 @@ const {
   updateProfile,
   requestEmailChange,
   confirmEmailChange,
+  changePassword,
 } = require('../controllers/userController');
 
 const { protect } = require('../middleware/authMiddleware');
@@ -25,6 +26,14 @@ const { validate, schemas } = require('../middleware/validate');
 // ── Profile ─────────────────────────────────────────────────────────────────
 router.get('/profile', protect, getProfile);
 router.put('/profile', protect, updateProfile);
+
+// ── Password Change ─────────────────────────────────────────────────────────
+router.post(
+  '/change-password',
+  protect,
+  validate(schemas.changePassword),
+  changePassword
+);
 
 // ── Email-change (2-step, OTP-verified) ─────────────────────────────────────
 router.post(

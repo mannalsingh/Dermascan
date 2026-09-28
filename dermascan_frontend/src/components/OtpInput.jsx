@@ -139,14 +139,14 @@ export default function OtpInput({ email, type, onVerified, onBack }) {
   return (
     <div className="animate-fade-in-scale">
       {/* Header */}
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-teal-100 rounded-full mb-4">
-          <ShieldCheck className="h-8 w-8 text-teal-600" />
+      <div className="text-center mb-6">
+        <div className="inline-flex items-center justify-center w-14 h-14 bg-teal-50 border border-teal-100 rounded-2xl mb-3 shadow-xs">
+          <ShieldCheck className="h-7 w-7 text-teal-600" />
         </div>
-        <h2 className="text-2xl font-bold text-white mb-2">Enter verification code</h2>
-        <p className="text-teal-200 text-sm">
-          We sent a 4-digit code to{' '}
-          <span className="font-semibold text-white">{email}</span>
+        <h2 className="text-xl font-bold text-slate-900 mb-1.5">Enter Verification Code</h2>
+        <p className="text-slate-500 text-sm">
+          We sent a 4-digit security code to{' '}
+          <span className="font-semibold text-slate-800 break-all">{email}</span>
         </p>
       </div>
 
@@ -165,26 +165,26 @@ export default function OtpInput({ email, type, onVerified, onBack }) {
               onKeyDown={(e) => handleKeyDown(i, e)}
               onPaste={handlePaste}
               className="otp-input"
-              placeholder="·"
+              placeholder="•"
               disabled={loading}
-              aria-label={`OTP digit ${i + 1}`}
+              aria-label={`Digit ${i + 1}`}
             />
           ))}
         </div>
 
         {/* Timer */}
-        <div className={`flex items-center justify-center gap-1.5 text-sm font-medium mb-4 ${timerColor}`}>
+        <div className={`flex items-center justify-center gap-1.5 text-xs font-semibold mb-5 ${timerColor}`}>
           <Timer className="h-4 w-4" />
           <span>
             {timeLeft > 0
               ? `Code expires in ${formatTime(timeLeft)}`
-              : 'OTP expired'}
+              : 'Code expired. Please request a new one.'}
           </span>
         </div>
 
         {/* Error */}
         {error && (
-          <div className="mb-4 p-3 bg-red-500/20 border border-red-400/40 rounded-lg text-sm text-red-200 text-center">
+          <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-sm text-rose-700 text-center font-medium">
             {error}
           </div>
         )}
@@ -193,57 +193,59 @@ export default function OtpInput({ email, type, onVerified, onBack }) {
         <button
           type="submit"
           disabled={!allFilled || loading || timeLeft === 0}
-          className="w-full bg-teal-500 hover:bg-teal-400 disabled:bg-teal-800 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors duration-200 flex items-center justify-center gap-2 mb-4"
+          className="btn-primary w-full py-3 flex items-center justify-center gap-2 mb-4 text-sm font-semibold"
         >
           {loading ? (
             <>
-              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-              Verifying…
+              <span>Verifying…</span>
             </>
           ) : (
-            'Verify Code'
+            'Verify & Continue'
           )}
         </button>
 
         {/* Resend */}
-        <div className="text-center">
+        <div className="text-center text-sm text-slate-500 mb-2">
           {timeLeft === 0 ? (
             <button
               type="button"
               onClick={handleResend}
               disabled={resending}
-              className="inline-flex items-center gap-1.5 text-teal-300 hover:text-white text-sm font-medium transition-colors duration-200 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 text-teal-600 hover:text-teal-700 font-semibold transition-colors disabled:opacity-50"
             >
               <RefreshCw className={`h-4 w-4 ${resending ? 'animate-spin' : ''}`} />
-              {resending ? 'Sending…' : 'Resend code'}
+              {resending ? 'Sending code…' : 'Resend Code'}
             </button>
           ) : (
-            <p className="text-teal-300 text-sm">
-              Didn't receive it?{' '}
+            <p>
+              Didn't receive code?{' '}
               <button
                 type="button"
                 onClick={handleResend}
                 disabled={resending}
-                className="text-white hover:underline font-medium disabled:opacity-50"
+                className="text-teal-600 hover:text-teal-700 font-semibold hover:underline disabled:opacity-50"
               >
-                {resending ? 'Sending…' : 'Resend code'}
+                {resending ? 'Sending…' : 'Resend'}
               </button>
             </p>
           )}
         </div>
 
         {/* Back */}
-        <button
-          type="button"
-          onClick={onBack}
-          className="mt-5 w-full flex items-center justify-center gap-2 text-teal-300 hover:text-white text-sm transition-colors duration-200"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </button>
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="mt-4 w-full flex items-center justify-center gap-1.5 text-slate-500 hover:text-slate-800 text-xs font-medium transition-colors"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back
+          </button>
+        )}
       </form>
     </div>
   )

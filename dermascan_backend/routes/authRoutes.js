@@ -27,6 +27,8 @@ const {
   verifyOtp,
   loginInitiate,
   loginComplete,
+  forgotPassword,
+  resetPassword,
 } = require('../controllers/authController');
 
 const { validate, schemas } = require('../middleware/validate');
@@ -34,6 +36,10 @@ const { validate, schemas } = require('../middleware/validate');
 // ── OTP helpers ─────────────────────────────────────────────────────────────
 router.post('/send-otp',    validate(schemas.sendOtp),   sendOtp);
 router.post('/verify-otp',  validate(schemas.verifyOtp), verifyOtp);
+
+// ── Password reset flow ─────────────────────────────────────────────────────
+router.post('/forgot-password', validate(schemas.forgotPassword), forgotPassword);
+router.post('/reset-password',  validate(schemas.resetPassword),  resetPassword);
 
 // ── OTP-gated registration ───────────────────────────────────────────────────
 router.post('/register',    validate(schemas.register),  register);

@@ -597,3 +597,98 @@ exports.googleLogin = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * POST /api/auth/forgot-password
+ * Body: { email }
+ *
+ * Sends a 4-digit password reset OTP to user's registered email.
+ */
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const cleanEmail = email.toLowerCase().trim();
+
+    const user = await User.findOne({ email: cleanEmail });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'No account found with this email address.',
+      });
+    }
+
+    await _generateAndSendOtp(cleanEmail, 'password_reset');
+
+    res.status(200).json({
+      success: true,
+      message: 'A 4-digit password reset code has been sent to your email.',
+    });
+  } catch (error) {
+    console.error('[Forgot Password Error]', error.message);
+    next(error);
+  }
+};
+
+/**
+ * POST /api/auth/reset-password
+ * Body: { email, otp, newPassword }
+ *
+ * Verifies the 4-digit OTP and securely updates user password.
+ */
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    const cleanEmail = email.toLowerCase().trim();
+
+    const tokenDoc = await OtpToken.findOne({
+      email: cleanEmail,
+      type: 'password_reset',
+      used: false,
+    });
+
+    if (!tokenDoc) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset code. Please request a new one.',
+      });
+    }
+
+    if (Date.now() > tokenDoc.expiresAt.getTime()) {
+      await OtpToken.findByIdAndDelete(tokenDoc._id);
+      return res.status(400).json({
+        success: false,
+        message: 'Reset code has expired. Please request a new one.',
+      });
+    }
+
+    const isMatch = await bcrypt.compare(otp, tokenDoc.otpHash);
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: 'Incorrect 4-digit code. Please check your email and try again.',
+      });
+    }
+
+    tokenDoc.used = true;
+    await tokenDoc.save();
+
+    const user = await User.findOne({ email: cleanEmail });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Account not found.',
+      });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password has been reset successfully. Please sign in with your new password.',
+    });
+  } catch (error) {
+    console.error('[Reset Password Error]', error.message);
+    next(error);
+  }
+};

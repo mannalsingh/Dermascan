@@ -63,10 +63,10 @@ export default function HistoryPage() {
               <button
                 key={f.key}
                 onClick={() => { setFilter(f.key); setPage(1) }}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
                   filter === f.key
-                    ? 'bg-blue-700 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-teal-600 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 {f.label}
