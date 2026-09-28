@@ -6,20 +6,20 @@ export default function LogoutConfirmModal({ isOpen, onCancel, onConfirm }) {
 
   return (
     <div
-      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in-scale"
+      className="fixed inset-0 bg-[#102A43]/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in-scale"
       onClick={onCancel}
       role="dialog"
       aria-modal="true"
       aria-labelledby="logout-modal-title"
     >
       <div
-        className="relative bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-sm p-6 text-center"
+        className="relative bg-white rounded-2xl shadow-2xl border border-[#E2ECEB] w-full max-w-sm p-6 text-center"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
         <button
           onClick={onCancel}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-lg hover:bg-slate-100"
+          className="absolute top-4 right-4 text-[#829AB1] hover:text-[#102A43] transition-colors p-1 rounded-lg hover:bg-[#F4FAF9]"
           aria-label="Close"
         >
           <X className="h-4 w-4" />
@@ -33,11 +33,11 @@ export default function LogoutConfirmModal({ isOpen, onCancel, onConfirm }) {
         {/* Title */}
         <h2
           id="logout-modal-title"
-          className="text-lg font-bold text-slate-900 mb-1.5"
+          className="text-lg font-bold text-[#102A43] mb-1.5"
         >
           Log out of DermaScan?
         </h2>
-        <p className="text-slate-500 text-xs leading-relaxed mb-6">
+        <p className="text-[#627D98] text-xs leading-relaxed mb-6">
           Are you sure you want to end your current session? You will need to sign in again to access your screening history and reports.
         </p>
 

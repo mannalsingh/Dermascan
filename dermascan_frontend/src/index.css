@@ -7,7 +7,7 @@
     box-sizing: border-box;
   }
   body {
-    @apply bg-gradient-to-br from-slate-50 via-white to-teal-50 text-gray-900 font-sans;
+    @apply bg-[#F4FAF9] text-[#334E68] font-sans;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -20,49 +20,49 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-semibold py-2.5 px-6 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-[#0F9D92] hover:bg-[#0C857B] active:bg-[#096B63] text-white font-semibold py-2.5 px-6 rounded-xl transition-all duration-200 shadow-sm shadow-[#0F9D92]/20 disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .btn-secondary {
-    @apply bg-white hover:bg-gray-50 active:bg-gray-100 text-gray-700 font-semibold py-2.5 px-6 rounded-lg border border-gray-300 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-white hover:bg-[#F8FAFC] active:bg-[#F1F5F9] text-[#102A43] font-semibold py-2.5 px-6 rounded-xl border border-[#D8E2EC] hover:border-[#BCCCDC] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .btn-danger {
-    @apply bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-6 rounded-lg transition-colors duration-200;
+    @apply bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-semibold py-2.5 px-6 rounded-xl transition-colors duration-200 shadow-sm shadow-rose-600/20;
   }
   .input-field {
-    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm transition-shadow duration-200;
+    @apply w-full px-4 py-3 bg-white border border-[#D8E2EC] hover:border-[#BCCCDC] rounded-xl text-[#102A43] placeholder-[#829AB1] text-sm focus:outline-none focus:border-[#0F9D92] focus:ring-4 focus:ring-[#0F9D92]/15 transition-all duration-200;
   }
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6;
+    @apply bg-white rounded-2xl border border-[#E2ECEB] p-6 shadow-medical-card;
   }
   .card-hover {
-    @apply card hover:shadow-md transition-shadow duration-200 cursor-pointer;
+    @apply card hover:shadow-lg transition-shadow duration-200 cursor-pointer;
   }
   .badge-low {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200;
   }
   .badge-medium {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200;
   }
   .badge-high {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200;
   }
   .badge-benign {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200;
   }
   .badge-malignant {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200;
   }
   .nav-link {
-    @apply flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-teal-50 hover:text-teal-700 transition-colors duration-150 font-medium;
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-[#627D98] hover:bg-[#F4FAF9] hover:text-[#0F9D92] transition-colors duration-150 font-medium;
   }
   .nav-link.active {
-    @apply bg-teal-50 text-teal-700 font-semibold;
+    @apply bg-[#F4FAF9] text-[#0F9D92] font-semibold border-r-2 border-[#0F9D92];
   }
   .section-title {
-    @apply text-2xl font-bold text-gray-900;
+    @apply text-2xl font-bold text-[#102A43];
   }
   .label {
-    @apply block text-sm font-medium text-gray-700 mb-1.5;
+    @apply block text-sm font-semibold text-[#102A43] mb-1.5;
   }
 }
 
@@ -95,9 +95,9 @@ html {
   animation: pulseRing 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
 @keyframes pulseRing {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.7); }
-  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(20, 184, 166, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(20, 184, 166, 0); }
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(15, 157, 146, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(15, 157, 146, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(15, 157, 146, 0); }
 }
 
 .recharts-tooltip-wrapper {
@@ -127,15 +127,15 @@ html {
 
 /* OTP Input */
 .otp-input {
-  @apply w-14 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-xl
-    focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200
+  @apply w-14 h-14 text-center text-2xl font-bold border-2 border-[#D8E2EC] rounded-xl text-[#102A43]
+    focus:outline-none focus:border-[#0F9D92] focus:ring-4 focus:ring-[#0F9D92]/15
     transition-all duration-200 bg-white;
 }
 .otp-input:not(:placeholder-shown) {
-  @apply border-teal-500 bg-teal-50 text-teal-800;
+  @apply border-[#0F9D92] bg-[#F4FAF9] text-[#102A43];
 }
 
 /* Modal overlay */
 .modal-overlay {
-  @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4;
+  @apply fixed inset-0 bg-[#102A43]/50 backdrop-blur-sm z-50 flex items-center justify-center p-4;
 }

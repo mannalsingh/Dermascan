@@ -161,21 +161,21 @@ export default function RegisterPage() {
   const strength = getStrength(form.password)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50/60 via-slate-50 to-emerald-50/40 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-[#F4FAF9] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
 
         {/* Brand Header */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2.5 mb-4 group">
-            <div className="w-11 h-11 bg-teal-600 group-hover:bg-teal-700 text-white rounded-2xl flex items-center justify-center shadow-sm shadow-teal-600/20 transition-all duration-200">
+            <div className="w-11 h-11 bg-[#0F9D92] group-hover:bg-[#0C857B] text-white rounded-2xl flex items-center justify-center shadow-sm shadow-[#0F9D92]/20 transition-all duration-200">
               <Scan className="h-6 w-6" />
             </div>
-            <span className="text-2xl font-bold text-slate-900 tracking-tight">DermaScan AI</span>
+            <span className="text-2xl font-bold text-[#102A43] tracking-tight">DermaScan AI</span>
           </Link>
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-2xl font-bold text-[#102A43]">
             {step === 1 ? 'Create your account' : 'Verify your email'}
           </h1>
-          <p className="text-slate-500 text-sm mt-1">
+          <p className="text-[#627D98] text-sm mt-1">
             {step === 1
               ? 'Start your AI-powered skin screening today'
               : `Enter the 4-digit code sent to ${form.email}`}
@@ -183,10 +183,10 @@ export default function RegisterPage() {
         </div>
 
         {/* Auth Card */}
-        <div className="card shadow-lg shadow-slate-200/50 border border-slate-200/80 p-8">
+        <div className="card p-8">
 
           {error && (
-            <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-sm text-rose-700 font-medium animate-fade-in-scale">
+            <div className="mb-5 p-3.5 bg-[#FEF2F2] border border-[#FECDCA] rounded-xl text-sm text-[#7F1D1D] font-medium animate-fade-in-scale">
               {error}
             </div>
           )}
@@ -199,9 +199,9 @@ export default function RegisterPage() {
                 <GoogleAuthButton className="w-full" />
 
                 <div className="flex items-center gap-3 my-5">
-                  <div className="flex-1 h-px bg-slate-200" />
-                  <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">or register with email</span>
-                  <div className="flex-1 h-px bg-slate-200" />
+                  <div className="flex-1 h-px bg-[#E2ECEB]" />
+                  <span className="text-xs font-semibold text-[#829AB1] uppercase tracking-wider">or register with email</span>
+                  <div className="flex-1 h-px bg-[#E2ECEB]" />
                 </div>
               </div>
 
@@ -209,7 +209,7 @@ export default function RegisterPage() {
                 <div>
                   <label htmlFor="name" className="label">Full Name</label>
                   <div className="relative">
-                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#829AB1]" />
                     <input
                       id="name"
                       name="name"
@@ -228,7 +228,7 @@ export default function RegisterPage() {
                 <div>
                   <label htmlFor="email" className="label">Email Address</label>
                   <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#829AB1]" />
                     <input
                       id="email"
                       name="email"
@@ -247,7 +247,7 @@ export default function RegisterPage() {
                 <div>
                   <label htmlFor="password" className="label">Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#829AB1]" />
                     <input
                       id="password"
                       name="password"
@@ -263,7 +263,7 @@ export default function RegisterPage() {
                     <button
                       type="button"
                       onClick={() => setShowPwd(!showPwd)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#829AB1] hover:text-[#334E68] transition-colors"
                       tabIndex={-1}
                       aria-label={showPwd ? 'Hide password' : 'Show password'}
                     >
@@ -272,7 +272,7 @@ export default function RegisterPage() {
                   </div>
                   {strength && (
                     <div className="mt-2">
-                      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-[#E2ECEB] rounded-full overflow-hidden">
                         <div className={`h-full rounded-full transition-all duration-300 ${strength.color} ${strength.w}`} />
                       </div>
                       <p className={`text-xs mt-1 font-semibold ${strength.textColor}`}>
@@ -285,7 +285,7 @@ export default function RegisterPage() {
                 <div>
                   <label htmlFor="confirm" className="label">Confirm Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#829AB1]" />
                     <input
                       id="confirm"
                       name="confirm"
@@ -311,9 +311,9 @@ export default function RegisterPage() {
                 </button>
               </form>
 
-              <p className="text-center text-sm text-slate-500 mt-6">
+              <p className="text-center text-sm text-[#627D98] mt-6">
                 Already have an account?{' '}
-                <Link to="/login" className="text-teal-600 hover:text-teal-700 font-semibold hover:underline">
+                <Link to="/login" className="text-[#0F9D92] hover:text-[#0C857B] font-semibold hover:underline">
                   Sign in
                 </Link>
               </p>
@@ -330,7 +330,7 @@ export default function RegisterPage() {
 
         </div>
 
-        <p className="text-center text-xs text-slate-400 mt-6">
+        <p className="text-center text-xs text-[#829AB1] mt-6">
           For educational & screening purposes only — not a clinical medical diagnosis
         </p>
       </div>

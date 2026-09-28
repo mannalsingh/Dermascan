@@ -183,10 +183,10 @@ export default function GoogleAuthButton({
       type="button"
       onClick={handleClick}
       disabled={loading || disabled}
-      className={`inline-flex items-center justify-center gap-2.5 bg-white hover:bg-slate-50 active:bg-slate-100 border border-[#dadce0] hover:border-[#c6c9ce] text-[#3c4043] font-medium text-sm py-2 px-4 rounded-xl shadow-xs transition-all duration-150 cursor-pointer disabled:opacity-50 select-none ${className}`}
+      className={`inline-flex items-center justify-center gap-2.5 bg-white hover:bg-[#F8FAFC] active:bg-[#F1F5F9] border border-[#D8E2EC] hover:border-[#BCCCDC] text-[#102A43] font-medium text-sm py-2.5 px-4 rounded-xl shadow-xs transition-all duration-150 cursor-pointer disabled:opacity-50 select-none ${className}`}
     >
       {loading ? (
-        <div className="w-4 h-4 border-2 border-slate-300 border-t-teal-600 rounded-full animate-spin flex-shrink-0" />
+        <div className="w-4 h-4 border-2 border-slate-200 border-t-[#0F9D92] rounded-full animate-spin flex-shrink-0" />
       ) : (
         <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
           <path
@@ -207,7 +207,7 @@ export default function GoogleAuthButton({
           />
         </svg>
       )}
-      <span className="font-sans font-medium text-sm text-[#3c4043] tracking-normal whitespace-nowrap">
+      <span className="font-sans font-medium text-sm text-[#102A43] tracking-normal whitespace-nowrap">
         {loading ? 'Connecting…' : buttonText}
       </span>
     </button>

@@ -210,25 +210,25 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50/60 via-slate-50 to-emerald-50/40 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-[#F4FAF9] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
 
         {/* Brand Header */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2.5 mb-4 group">
-            <div className="w-11 h-11 bg-teal-600 group-hover:bg-teal-700 text-white rounded-2xl flex items-center justify-center shadow-sm shadow-teal-600/20 transition-all duration-200">
+            <div className="w-11 h-11 bg-[#0F9D92] group-hover:bg-[#0C857B] text-white rounded-2xl flex items-center justify-center shadow-sm shadow-[#0F9D92]/20 transition-all duration-200">
               <Scan className="h-6 w-6" />
             </div>
-            <span className="text-2xl font-bold text-slate-900 tracking-tight">DermaScan AI</span>
+            <span className="text-2xl font-bold text-[#102A43] tracking-tight">DermaScan AI</span>
           </Link>
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-2xl font-bold text-[#102A43]">
             {view === 'credentials' && 'Welcome back'}
             {view === 'otp' && 'Security Verification'}
             {view === 'google_otp' && 'Two-Factor Authentication'}
             {view === 'forgot' && 'Reset your password'}
             {view === 'reset' && 'Create new password'}
           </h1>
-          <p className="text-slate-500 text-sm mt-1">
+          <p className="text-[#627D98] text-sm mt-1">
             {view === 'credentials' && 'Sign in to access your skin screening portal'}
             {view === 'otp' && 'Please confirm your identity with the security code'}
             {view === 'google_otp' && 'Confirm your Google sign-in with the verification code'}
@@ -238,18 +238,18 @@ export default function LoginPage() {
         </div>
 
         {/* Auth Card */}
-        <div className="card shadow-lg shadow-slate-200/50 border border-slate-200/80 p-8">
+        <div className="card p-8">
 
           {/* Alert Messages */}
           {error && (
-            <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-sm text-rose-700 font-medium animate-fade-in-scale">
+            <div className="mb-5 p-3.5 bg-[#FEF2F2] border border-[#FECDCA] rounded-xl text-sm text-[#7F1D1D] font-medium animate-fade-in-scale">
               {error}
             </div>
           )}
 
           {successMsg && (
-            <div className="mb-5 p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-800 font-medium flex items-center gap-2 animate-fade-in-scale">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+            <div className="mb-5 p-3.5 bg-[#F0FDF4] border border-[#C3E6CD] rounded-xl text-sm text-[#1B4D2E] font-medium flex items-center gap-2 animate-fade-in-scale">
+              <CheckCircle2 className="h-4 w-4 text-[#0F9D92] flex-shrink-0" />
               <span>{successMsg}</span>
             </div>
           )}
@@ -269,9 +269,9 @@ export default function LoginPage() {
                 />
 
                 <div className="flex items-center gap-3 my-5">
-                  <div className="flex-1 h-px bg-slate-200" />
-                  <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">or sign in with email</span>
-                  <div className="flex-1 h-px bg-slate-200" />
+                  <div className="flex-1 h-px bg-[#E2ECEB]" />
+                  <span className="text-xs font-semibold text-[#829AB1] uppercase tracking-wider">or sign in with email</span>
+                  <div className="flex-1 h-px bg-[#E2ECEB]" />
                 </div>
               </div>
 
@@ -280,7 +280,7 @@ export default function LoginPage() {
                 <div>
                   <label htmlFor="email" className="label">Email Address</label>
                   <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#829AB1]" />
                     <input
                       id="email"
                       name="email"
@@ -302,13 +302,13 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => { setError(''); setSuccessMsg(''); setResetEmail(form.email); setView('forgot'); }}
-                      className="text-xs font-semibold text-teal-600 hover:text-teal-700 transition-colors"
+                      className="text-xs font-semibold text-[#0F9D92] hover:text-[#0C857B] transition-colors"
                     >
                       Forgot password?
                     </button>
                   </div>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#829AB1]" />
                     <input
                       id="password"
                       name="password"
@@ -324,7 +324,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowPwd(!showPwd)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#829AB1] hover:text-[#334E68] transition-colors"
                       tabIndex={-1}
                       aria-label={showPwd ? 'Hide password' : 'Show password'}
                     >
@@ -343,9 +343,9 @@ export default function LoginPage() {
                 </button>
               </form>
 
-              <p className="text-center text-sm text-slate-500 mt-6">
+              <p className="text-center text-sm text-[#627D98] mt-6">
                 Don't have an account?{' '}
-                <Link to="/register" className="text-teal-600 hover:text-teal-700 font-semibold hover:underline">
+                <Link to="/register" className="text-[#0F9D92] hover:text-[#0C857B] font-semibold hover:underline">
                   Create one
                 </Link>
               </p>
@@ -394,7 +394,7 @@ export default function LoginPage() {
                 <div>
                   <label htmlFor="resetEmail" className="label">Registered Email</label>
                   <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#829AB1]" />
                     <input
                       id="resetEmail"
                       type="email"
@@ -420,7 +420,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => { setError(''); setView('credentials'); }}
-                  className="w-full flex items-center justify-center gap-1.5 text-slate-500 hover:text-slate-800 text-xs font-medium pt-2 transition-colors"
+                  className="w-full flex items-center justify-center gap-1.5 text-[#627D98] hover:text-[#102A43] text-xs font-medium pt-2 transition-colors"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" />
                   Back to Sign In
@@ -468,7 +468,7 @@ export default function LoginPage() {
                 <div>
                   <label htmlFor="newPassword" className="label">New Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#829AB1]" />
                     <input
                       id="newPassword"
                       type={showNewPwd ? 'text' : 'password'}
@@ -482,7 +482,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowNewPwd(!showNewPwd)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#829AB1] hover:text-[#334E68]"
                       tabIndex={-1}
                     >
                       {showNewPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -493,7 +493,7 @@ export default function LoginPage() {
                 <div>
                   <label htmlFor="confirmPassword" className="label">Confirm New Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#829AB1]" />
                     <input
                       id="confirmPassword"
                       type={showNewPwd ? 'text' : 'password'}
@@ -519,7 +519,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => { setError(''); setView('credentials'); }}
-                  className="w-full flex items-center justify-center gap-1.5 text-slate-500 hover:text-slate-800 text-xs font-medium pt-2 transition-colors"
+                  className="w-full flex items-center justify-center gap-1.5 text-[#627D98] hover:text-[#102A43] text-xs font-medium pt-2 transition-colors"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" />
                   Back to Sign In
@@ -530,7 +530,7 @@ export default function LoginPage() {
 
         </div>
 
-        <p className="text-center text-xs text-slate-400 mt-6">
+        <p className="text-center text-xs text-[#829AB1] mt-6">
           For preliminary screening purposes only — not a clinical medical diagnosis
         </p>
       </div>
