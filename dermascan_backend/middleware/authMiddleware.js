@@ -11,24 +11,24 @@ const protect = async (req, res, next) => {
     try {
       token = req.headers.authorization.split(' ')[1];
 
-      // All tokens must be valid signed JWTs
+      
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // If database is connected, resolve to the actual MongoDB User document
+      
       if (mongoose.connection.readyState === 1) {
         let user = null;
 
-        // 1. Try resolving by ObjectId if decoded.id is a valid ObjectId
+       
         if (decoded.id && mongoose.Types.ObjectId.isValid(decoded.id)) {
           user = await User.findById(decoded.id).select('-password');
         }
 
-        // 2. If not found by ID (e.g. token has google_ or user_ prefix), resolve by email
+        
         if (!user && decoded.email) {
           const cleanEmail = decoded.email.toLowerCase().trim();
           user = await User.findOne({ email: cleanEmail }).select('-password');
 
-          // If the user does not exist yet in MongoDB, create the real MongoDB User document
+          
           if (!user) {
             try {
               const cleanName = decoded.name || 'User';
@@ -55,7 +55,7 @@ const protect = async (req, res, next) => {
         return res.status(401).json({ success: false, message: 'Not authorized, user not found' });
       }
 
-      // If database is temporarily down, check fallback store for signed tokens
+      
       if (decoded.email) {
         const fallbackStore = require('../data/fallbackStore');
         const userFromStore = fallbackStore.getUserByEmail(decoded.email) || {};
