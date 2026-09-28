@@ -37,11 +37,17 @@ export const authAPI = {
   register: (data) => api.post('/api/auth/register', data),
   login: (data) => api.post('/api/auth/login', data),
   googleLogin: (data) => api.post('/api/auth/google', data),
+  loginInitiate: (data) => api.post('/api/auth/login-initiate', data),
+  loginComplete: (data) => api.post('/api/auth/login-complete', data),
+  sendOtp: (data) => api.post('/api/auth/send-otp', data),
+  verifyOtp: (data) => api.post('/api/auth/verify-otp', data),
 }
 
 export const userAPI = {
   getProfile: () => api.get('/api/user/profile'),
   updateProfile: (data) => api.put('/api/user/profile', data),
+  requestEmailChange: (data) => api.post('/api/user/request-email-change', data),
+  confirmEmailChange: (data) => api.post('/api/user/confirm-email-change', data),
 }
 
 export const screeningAPI = {

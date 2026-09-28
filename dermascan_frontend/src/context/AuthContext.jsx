@@ -64,6 +64,16 @@ export function AuthProvider({ children }) {
     clearAuth()
   }, [clearAuth])
 
+  const sendOtp = useCallback(async (email, type) => {
+    const res = await authAPI.sendOtp({ email, type })
+    return res.data
+  }, [])
+
+  const verifyOtp = useCallback(async (email, otp, type) => {
+    const res = await authAPI.verifyOtp({ email, otp, type })
+    return res.data
+  }, [])
+
   const refreshProfile = useCallback(async () => {
     try {
       const res = await userAPI.getProfile()
@@ -88,6 +98,8 @@ export function AuthProvider({ children }) {
     googleLogin,
     logout,
     saveAuth,
+    sendOtp,
+    verifyOtp,
     refreshProfile,
   }
 

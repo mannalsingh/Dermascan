@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import LogoutConfirmModal from './LogoutConfirmModal'
 import {
   Activity, LayoutDashboard, Upload, History, BarChart2,
   User, LogOut, Menu, X, Scan
@@ -34,27 +35,44 @@ export default function Navbar() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
 
   const handleLogout = () => {
+    setShowLogoutModal(true)
+  }
+
+  const confirmLogout = () => {
     logout()
     navigate('/login')
     setMobileOpen(false)
+    setShowLogoutModal(false)
+  }
+
+  const cancelLogout = () => {
+    setShowLogoutModal(false)
   }
 
   const closeMobile = () => setMobileOpen(false)
 
   return (
     <>
-      
+      {/* Logout confirmation modal */}
+      <LogoutConfirmModal
+        isOpen={showLogoutModal}
+        onCancel={cancelLogout}
+        onConfirm={confirmLogout}
+      />
+
+      {/* ── Desktop sidebar ─────────────────────────────────────────────────── */}
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 min-h-screen fixed left-0 top-0 z-30">
         
         <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-100">
-          <div className="flex items-center justify-center w-9 h-9 bg-blue-700 rounded-lg">
+          <div className="flex items-center justify-center w-9 h-9 bg-teal-700 rounded-lg">
             <Scan className="h-5 w-5 text-white" />
           </div>
           <div>
             <span className="font-bold text-gray-900 text-lg leading-none">DermaScan</span>
-            <span className="block text-xs text-blue-600 font-medium">AI Assistant</span>
+            <span className="block text-xs text-teal-600 font-medium">AI Assistant</span>
           </div>
         </div>
 
@@ -66,8 +84,8 @@ export default function Navbar() {
 
         <div className="px-3 py-4 border-t border-gray-100">
           <div className="flex items-center gap-3 px-3 py-2 mb-2">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-              <span className="text-sm font-semibold text-blue-700">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
+              <span className="text-sm font-semibold text-teal-700">
                 {user?.name?.[0]?.toUpperCase() || 'U'}
               </span>
             </div>
@@ -86,9 +104,10 @@ export default function Navbar() {
         </div>
       </aside>
 
+      {/* ── Mobile header ───────────────────────────────────────────────────── */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 px-4 h-14 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-8 h-8 bg-blue-700 rounded-lg">
+          <div className="flex items-center justify-center w-8 h-8 bg-teal-700 rounded-lg">
             <Scan className="h-4 w-4 text-white" />
           </div>
           <span className="font-bold text-gray-900">DermaScan AI</span>
@@ -102,9 +121,9 @@ export default function Navbar() {
         </button>
       </header>
 
+      {/* ── Mobile drawer ───────────────────────────────────────────────────── */}
       {mobileOpen && (
         <>
-          
           <div
             className="md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
             onClick={closeMobile}
@@ -118,8 +137,8 @@ export default function Navbar() {
             </nav>
             <div className="px-3 py-3 border-t border-gray-100">
               <div className="flex items-center gap-3 px-3 py-2 mb-2">
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                  <span className="text-sm font-semibold text-blue-700">
+                <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
+                  <span className="text-sm font-semibold text-teal-700">
                     {user?.name?.[0]?.toUpperCase() || 'U'}
                   </span>
                 </div>
