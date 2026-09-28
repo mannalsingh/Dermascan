@@ -70,7 +70,7 @@ export default function LandingPage() {
               </Link>
             ) : (
               <>
-                <GoogleAuthButton width={195} className="hidden sm:flex" />
+                <GoogleAuthButton className="hidden sm:inline-flex text-xs py-2 px-3.5" />
                 <Link to="/login" className="btn-secondary text-sm py-2 px-3.5">
                   Sign In
                 </Link>
@@ -103,13 +103,12 @@ export default function LandingPage() {
         </p>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-xl mx-auto mb-8">
-          <GoogleAuthButton width={230} />
+        <div className="flex items-center justify-center max-w-xs mx-auto mb-8">
           <Link
             to="/register"
-            className="btn-primary flex items-center justify-center gap-2 text-base px-8 py-3 w-full sm:w-auto font-semibold shadow-md shadow-teal-600/20"
+            className="btn-primary flex items-center justify-center gap-2 text-base px-8 py-3.5 w-full font-semibold shadow-md shadow-teal-600/20 rounded-xl"
           >
-            <span>Get Started Free</span>
+            <span>Start Free Screening</span>
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>

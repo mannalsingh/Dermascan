@@ -16,6 +16,12 @@ export default function GoogleAuthButton({
 
   const handleTokenResponse = useCallback(
     async (tokenResponse) => {
+      if (tokenResponse?.error) {
+        console.error('Google token error:', tokenResponse.error)
+        setLoading(false)
+        return
+      }
+
       if (tokenResponse?.access_token) {
         try {
           setLoading(true)
@@ -26,6 +32,8 @@ export default function GoogleAuthButton({
         } finally {
           setLoading(false)
         }
+      } else {
+        setLoading(false)
       }
     },
     [googleLogin, navigate]
@@ -63,22 +71,49 @@ export default function GoogleAuthButton({
     if (loading || disabled) return
 
     if (!GOOGLE_CLIENT_ID) {
+      console.warn('VITE_GOOGLE_CLIENT_ID is not configured in environment.')
       navigate('/login')
       return
     }
 
-    if (tokenClientRef.current) {
-      tokenClientRef.current.requestAccessToken({ prompt: 'select_account' })
-    } else if (window.google?.accounts?.oauth2) {
-      const client = window.google.accounts.oauth2.initTokenClient({
-        client_id: GOOGLE_CLIENT_ID,
-        scope: 'email profile openid',
-        callback: handleTokenResponse,
-      })
-      tokenClientRef.current = client
-      client.requestAccessToken({ prompt: 'select_account' })
+    setLoading(true)
+
+    const triggerClient = () => {
+      try {
+        if (!tokenClientRef.current && window.google?.accounts?.oauth2) {
+          tokenClientRef.current = window.google.accounts.oauth2.initTokenClient({
+            client_id: GOOGLE_CLIENT_ID,
+            scope: 'email profile openid',
+            callback: handleTokenResponse,
+          })
+        }
+        if (tokenClientRef.current) {
+          tokenClientRef.current.requestAccessToken({ prompt: 'select_account' })
+        } else {
+          setLoading(false)
+          navigate('/login')
+        }
+      } catch (e) {
+        console.error('Failed to trigger Google access token:', e)
+        setLoading(false)
+      }
+    }
+
+    if (window.google?.accounts?.oauth2) {
+      triggerClient()
     } else {
-      navigate('/login')
+      const script = document.createElement('script')
+      script.src = 'https://accounts.google.com/gsi/client'
+      script.async = true
+      script.defer = true
+      script.onload = () => {
+        triggerClient()
+      }
+      script.onerror = () => {
+        setLoading(false)
+        navigate('/login')
+      }
+      document.body.appendChild(script)
     }
   }
 
@@ -87,12 +122,12 @@ export default function GoogleAuthButton({
       type="button"
       onClick={handleClick}
       disabled={loading || disabled}
-      className={`inline-flex items-center justify-center gap-3 bg-white hover:bg-slate-50 active:bg-slate-100 border border-[#dadce0] hover:border-[#c6c9ce] text-[#3c4043] font-medium text-sm py-2.5 px-5 rounded-xl shadow-xs transition-all duration-150 cursor-pointer disabled:opacity-50 select-none ${className}`}
+      className={`inline-flex items-center justify-center gap-2.5 bg-white hover:bg-slate-50 active:bg-slate-100 border border-[#dadce0] hover:border-[#c6c9ce] text-[#3c4043] font-medium text-sm py-2 px-4 rounded-xl shadow-xs transition-all duration-150 cursor-pointer disabled:opacity-50 select-none ${className}`}
     >
       {loading ? (
-        <div className="w-5 h-5 border-2 border-slate-300 border-t-teal-600 rounded-full animate-spin flex-shrink-0" />
+        <div className="w-4 h-4 border-2 border-slate-300 border-t-teal-600 rounded-full animate-spin flex-shrink-0" />
       ) : (
-        <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
+        <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
           <path
             fill="#4285F4"
             d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -111,7 +146,7 @@ export default function GoogleAuthButton({
           />
         </svg>
       )}
-      <span className="font-sans font-medium text-sm text-[#3c4043] tracking-normal">
+      <span className="font-sans font-medium text-sm text-[#3c4043] tracking-normal whitespace-nowrap">
         {loading ? 'Connecting…' : buttonText}
       </span>
     </button>
