@@ -635,11 +635,11 @@ exports.googleLogin = async (req, res, next) => {
     // ── Verify Email service configuration exists before generating/saving OTP ──
     const { getSanitizedConfig } = require('../config/emailService');
     const emailConfig = getSanitizedConfig();
-    if (!emailConfig.hasKey) {
-      console.error('[Google Auth] Cannot dispatch OTP: RESEND_API_KEY missing or invalid in environment.');
+    if (!emailConfig.configured) {
+      console.error('[Google Auth] Cannot dispatch OTP: Brevo configuration missing or incomplete in environment.');
       return res.status(503).json({
         success: false,
-        message: 'Email service is currently unconfigured. Please configure RESEND_API_KEY.',
+        message: 'Email service is currently unconfigured. Please configure BREVO_API_KEY and BREVO_SENDER_EMAIL.',
       });
     }
 
@@ -912,10 +912,10 @@ exports.resendGoogleOtp = async (req, res, next) => {
     // ── Verify Email service configuration before generating/resending OTP ──
     const { getSanitizedConfig } = require('../config/emailService');
     const emailConfig = getSanitizedConfig();
-    if (!emailConfig.hasKey) {
+    if (!emailConfig.configured) {
       return res.status(503).json({
         success: false,
-        message: 'Email service is currently unconfigured. Please configure RESEND_API_KEY.',
+        message: 'Email service is currently unconfigured. Please configure BREVO_API_KEY and BREVO_SENDER_EMAIL.',
       });
     }
 

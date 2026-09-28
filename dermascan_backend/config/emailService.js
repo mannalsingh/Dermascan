@@ -1,117 +1,60 @@
 /**
  * emailService.js
  *
- * Production-grade HTTPS Email Service for DermaScan AI.
- * Communicates strictly over HTTPS (Port 443) to guarantee 100% reliability
- * on Render Free Tier Web Services, completely bypassing cloud container SMTP firewall blocks.
+ * Production-grade Transactional Email Service for DermaScan AI
+ * powered by Brevo (formerly Sendinblue) Transactional Email API.
  *
- * Supported Providers (both over HTTPS port 443):
- *  1. 'gmail_api': Official Google Gmail REST API via OAuth2 (Port 443, unlimited arbitrary recipients, no custom domain needed)
- *  2. 'resend': Resend HTTPS REST API (Port 443)
+ * NETWORK ARCHITECTURE:
+ *  - Communicates strictly over HTTPS (Port 443) via the official @getbrevo/brevo SDK
+ *    and direct REST API (https://api.brevo.com/v3/smtp/email).
+ *  - 100% compliant with Render Free Tier (bypasses all cloud container SMTP firewall blocks).
+ *  - Supports arbitrary recipient emails on the free tier with a single verified sender.
+ *  - $0/month, no credit card required, up to 300 free emails/day.
  *
- * Handles transactional email delivery for:
- *  - 'google_login': 2FA verification code after Google OAuth
- *  - 'login': Standard password 2FA verification code
- *  - 'register': New user email verification
- *  - 'email_change': Profile email update confirmation
- *  - 'password_reset': Password recovery code
- *
- * SECURITY & ARCHITECTURE:
- *  - Zero credential leakage (secrets and tokens are never logged or returned in responses).
- *  - Communicates over HTTPS port 443 via OAuth2 / REST API.
- *  - Full responsive DermaScan AI clinical HTML email template.
- *  - Plain-text fallback for all email clients.
- *  - Non-blocking startup diagnostic check.
+ * SECURITY:
+ *  - Zero secret or OTP leakage (BREVO_API_KEY is never logged or returned in responses).
+ *  - Plaintext OTP is never logged.
+ *  - Safe diagnostic metadata exposed for /health endpoint.
  */
 
-const { OAuth2Client } = require('google-auth-library');
+const { BrevoClient } = require('@getbrevo/brevo');
 const axios = require('axios');
-let ResendPackage = null;
-try {
-  ResendPackage = require('resend').Resend;
-} catch (e) {
-  // Resend optional fallback
-}
 
 /**
- * Reads, prioritizes, and sanitizes environment configuration.
+ * Sanitizes and loads Brevo email configuration from process.env.
  */
 const getSanitizedConfig = () => {
-  // ── Gmail REST API (HTTPS Port 443) ──
-  const gmailUser = (process.env.GMAIL_USER || process.env.EMAIL_USER || '').trim();
-  const gmailClientId = (process.env.GMAIL_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || '').trim();
-  const gmailClientSecret = (process.env.GMAIL_CLIENT_SECRET || '').trim();
-  const gmailRefreshToken = (process.env.GMAIL_REFRESH_TOKEN || '').trim();
+  const apiKey = (process.env.BREVO_API_KEY || '').trim().replace(/^["']|["']$/g, '');
+  const senderEmail = (process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_USER || process.env.GMAIL_USER || '').trim();
+  const senderName = (process.env.BREVO_SENDER_NAME || 'DermaScan AI').trim();
 
-  const hasGmailApi = Boolean(
-    gmailUser &&
-    gmailClientId &&
-    gmailClientSecret &&
-    gmailRefreshToken &&
-    !gmailRefreshToken.startsWith('your_')
-  );
+  const isPlaceholder = !apiKey || apiKey.startsWith('your_') || apiKey === 'xkeysib-placeholder';
+  const hasKey = Boolean(apiKey && !isPlaceholder);
+  const hasSender = Boolean(senderEmail && senderEmail.includes('@'));
 
-  // ── Resend HTTPS API (Port 443) ──
-  const rawResendKey = process.env.RESEND_API_KEY || '';
-  const resendApiKey = rawResendKey.trim().replace(/^["']|["']$/g, '').replace(/\s+/g, '');
-  const resendFrom = (process.env.RESEND_FROM || process.env.EMAIL_FROM || '').trim() || 'DermaScan AI <onboarding@resend.dev>';
-  const hasResend = Boolean(resendApiKey && !resendApiKey.startsWith('your_'));
-
-  if (hasGmailApi) {
-    return {
-      provider: 'gmail_api',
-      protocol: 'https',
-      port: 443,
-      host: 'gmail.googleapis.com',
-      user: gmailUser,
-      sender: `DermaScan AI <${gmailUser}>`,
-      clientId: gmailClientId,
-      clientSecret: gmailClientSecret,
-      refreshToken: gmailRefreshToken,
-      hasKey: true,
-      hasGmailApi: true,
-      hasResend: false,
-      isPlaceholder: false,
-      hasUser: true,
-      hasPass: true,
-    };
-  }
-
-  if (hasResend) {
-    return {
-      provider: 'resend',
-      protocol: 'https',
-      port: 443,
-      host: 'api.resend.com',
-      apiKey: resendApiKey,
-      from: resendFrom,
-      sender: resendFrom,
-      hasKey: true,
-      hasGmailApi: false,
-      hasResend: true,
-      isPlaceholder: false,
-      hasUser: true,
-      hasPass: true,
-    };
-  }
+  const configured = Boolean(hasKey && hasSender);
 
   return {
-    provider: 'unconfigured',
+    provider: 'brevo',
     protocol: 'https',
+    host: 'api.brevo.com',
     port: 443,
-    host: 'none',
-    sender: 'unconfigured',
-    hasKey: false,
-    hasGmailApi: false,
-    hasResend: false,
-    isPlaceholder: true,
-    hasUser: false,
-    hasPass: false,
+    apiKey,
+    hasKey,
+    senderEmail,
+    senderName,
+    sender: hasSender ? `${senderName} <${senderEmail}>` : 'unconfigured',
+    configured,
+    isPlaceholder,
+    keyLength: apiKey ? apiKey.length : 0,
+    // Backwards-compatible flags
+    hasUser: configured,
+    hasPass: configured,
   };
 };
 
 /**
- * Returns copy metadata for each verification flow.
+ * Subject lines and copy metadata for each transactional email flow.
  */
 const getEmailCopy = (type) => {
   switch (type) {
@@ -161,7 +104,7 @@ const getEmailCopy = (type) => {
 };
 
 /**
- * Responsive HTML email template for 4-digit OTP delivery.
+ * Responsive clinical HTML email template for 4-digit OTP delivery.
  */
 const buildHtmlTemplate = (otp, type) => {
   const { headline, badge, body } = getEmailCopy(type);
@@ -315,124 +258,9 @@ const buildHtmlTemplate = (otp, type) => {
 };
 
 /**
- * Builds RFC 2822 formatted email message for Gmail REST API.
- */
-const buildRfc2822Message = ({ from, to, subject, html, text }) => {
-  const boundary = `====_DermaScan_Boundary_${Date.now()}====`;
-  const encodedSubject = `=?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`;
-
-  const lines = [
-    `From: ${from}`,
-    `To: ${to}`,
-    `Subject: ${encodedSubject}`,
-    `MIME-Version: 1.0`,
-    `Content-Type: multipart/alternative; boundary="${boundary}"`,
-    ``,
-    `--${boundary}`,
-    `Content-Type: text/plain; charset=UTF-8`,
-    `Content-Transfer-Encoding: 7bit`,
-    ``,
-    text,
-    ``,
-    `--${boundary}`,
-    `Content-Type: text/html; charset=UTF-8`,
-    `Content-Transfer-Encoding: 7bit`,
-    ``,
-    html,
-    ``,
-    `--${boundary}--`,
-  ];
-
-  return lines.join('\r\n');
-};
-
-/**
- * Sends OTP email using the official Google Gmail REST API over HTTPS port 443.
- * Supports sending to ANY arbitrary recipient in the world with zero domain verification.
- */
-const sendViaGmailApi = async (config, to, otp, type) => {
-  const { subject } = getEmailCopy(type);
-  const html = buildHtmlTemplate(otp, type);
-  const text = `Your DermaScan AI verification code is: ${otp}\n\nThis code expires in 5 minutes.\n\nIf you did not request this code, you can safely ignore this email — your account remains secure.`;
-
-  // Exchange Refresh Token for fresh Access Token via Google OAuth2 client
-  const oauth2Client = new OAuth2Client(config.clientId, config.clientSecret);
-  oauth2Client.setCredentials({ refresh_token: config.refreshToken });
-
-  const tokenResponse = await oauth2Client.getAccessToken();
-  const accessToken = tokenResponse?.token || (typeof tokenResponse === 'string' ? tokenResponse : null);
-
-  if (!accessToken) {
-    throw new Error('Failed to obtain fresh Google OAuth2 access token using GMAIL_REFRESH_TOKEN.');
-  }
-
-  const rfcMessage = buildRfc2822Message({
-    from: config.sender,
-    to,
-    subject,
-    html,
-    text,
-  });
-
-  const raw = Buffer.from(rfcMessage, 'utf-8').toString('base64url');
-
-  const response = await axios.post(
-    'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
-    { raw },
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      timeout: 15000,
-    }
-  );
-
-  const messageId = response.data?.id || 'sent';
-  console.log(`[Email Service] OTP email dispatched via Gmail REST API (ID: ${messageId}) to ${to} [${type}]`);
-  return { success: true, id: messageId };
-};
-
-/**
- * Sends OTP email using Resend HTTPS API over port 443.
- */
-const sendViaResend = async (config, to, otp, type) => {
-  if (!ResendPackage) {
-    throw new Error('Resend SDK is not installed.');
-  }
-
-  const { subject } = getEmailCopy(type);
-  const html = buildHtmlTemplate(otp, type);
-  const text = `Your DermaScan AI verification code is: ${otp}\n\nThis code expires in 5 minutes.\n\nIf you did not request this code, you can safely ignore this email — your account remains secure.`;
-
-  const resend = new ResendPackage(config.apiKey);
-  const { data, error } = await resend.emails.send({
-    from: config.from,
-    to: [to],
-    subject,
-    html,
-    text,
-  });
-
-  if (error) {
-    console.error(`[Email Service] Resend API error: ${error.message} (${error.name || 'API_ERROR'})`);
-    throw new Error(error.message || 'Resend API rejected the email request.');
-  }
-
-  if (!data?.id) {
-    throw new Error('Resend API returned empty dispatch confirmation.');
-  }
-
-  console.log(`[Email Service] OTP email accepted by Resend (ID: ${data.id}) to ${to} [${type}]`);
-  return { success: true, id: data.id };
-};
-
-/**
- * Sends an OTP email to the specified recipient using HTTPS port 443.
- * Prioritizes Gmail REST API (unlimited arbitrary recipients).
- * Falls back to Resend if configured.
+ * Sends an OTP email to the specified recipient using Brevo Transactional Email API over HTTPS (Port 443).
  *
- * @param {string} to Recipient email address
+ * @param {string} to Recipient email address (verified Google email)
  * @param {string} otp 4-digit plain numeric OTP
  * @param {'google_login'|'login'|'register'|'email_change'|'password_reset'} type
  * @returns {Promise<{ success: boolean, id: string }>}
@@ -440,66 +268,124 @@ const sendViaResend = async (config, to, otp, type) => {
 const sendOtpEmail = async (to, otp, type = 'google_login') => {
   const config = getSanitizedConfig();
 
-  if (!config.hasKey) {
-    const reason = 'Email service is unconfigured. Please configure GMAIL_REFRESH_TOKEN or RESEND_API_KEY.';
-    console.error(`[Email Service Error] Cannot dispatch OTP email: ${reason}`);
+  if (!config.configured) {
+    const reason = !config.hasKey
+      ? 'BREVO_API_KEY is not configured or is using a placeholder in environment.'
+      : 'BREVO_SENDER_EMAIL is not configured in environment.';
+    console.error(`[Email Service Error] Cannot dispatch OTP: ${reason}`);
     throw new Error(`Email service unconfigured: ${reason}`);
   }
 
+  const { subject } = getEmailCopy(type);
+  const htmlContent = buildHtmlTemplate(otp, type);
+  const textContent = `Your DermaScan AI verification code is: ${otp}\n\nThis code expires in 5 minutes.\n\nIf you did not request this code, you can safely ignore this email — your account remains secure.`;
+
+  // 1. Primary method: Official BrevoClient SDK over HTTPS
   try {
-    if (config.provider === 'gmail_api') {
-      return await sendViaGmailApi(config, to, otp, type);
-    } else if (config.provider === 'resend') {
-      return await sendViaResend(config, to, otp, type);
-    } else {
-      throw new Error('Unknown email provider configured.');
+    const brevo = new BrevoClient({ apiKey: config.apiKey });
+    const response = await brevo.transactionalEmails.sendTransacEmail({
+      sender: {
+        name: config.senderName,
+        email: config.senderEmail,
+      },
+      to: [
+        {
+          email: to.trim().toLowerCase(),
+        },
+      ],
+      subject,
+      htmlContent,
+      textContent,
+    });
+
+    const messageId = response.data?.messageId || response.messageId || 'sent';
+    console.log(`[Email Service] OTP email dispatched via Brevo API (ID: ${messageId}) to ${to} [${type}]`);
+    return { success: true, id: messageId };
+  } catch (sdkErr) {
+    console.warn('[Email Service] Brevo SDK call failed, attempting direct HTTPS REST fallback:', sdkErr.message);
+
+    // 2. Direct HTTPS REST API fallback (Port 443)
+    try {
+      const restResponse = await axios.post(
+        'https://api.brevo.com/v3/smtp/email',
+        {
+          sender: {
+            name: config.senderName,
+            email: config.senderEmail,
+          },
+          to: [
+            {
+              email: to.trim().toLowerCase(),
+            },
+          ],
+          subject,
+          htmlContent,
+          textContent,
+        },
+        {
+          headers: {
+            'api-key': config.apiKey,
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          timeout: 15000,
+        }
+      );
+
+      const messageId = restResponse.data?.messageId || 'sent';
+      console.log(`[Email Service] OTP email dispatched via Brevo REST API (ID: ${messageId}) to ${to} [${type}]`);
+      return { success: true, id: messageId };
+    } catch (restErr) {
+      const apiMessage =
+        restErr.response?.data?.message ||
+        restErr.response?.data?.error ||
+        restErr.message;
+      console.error('[Email Service] Brevo API rejected request:', apiMessage);
+      throw new Error(`Failed to deliver verification email: ${apiMessage}`);
     }
-  } catch (err) {
-    console.error(`[Email Service] Delivery failed via ${config.provider}:`, err.message);
-    throw new Error(`Failed to deliver verification email: ${err.message}`);
   }
 };
 
 /**
- * Returns safe diagnostic information for /health endpoint.
- * NEVER exposes tokens or raw secrets.
+ * Returns safe diagnostic information for the /health endpoint.
+ * Zero secret leakage.
  */
 const getSmtpDiagnosticStatus = async () => {
   const config = getSanitizedConfig();
 
   return {
-    configured: config.hasKey,
-    provider: config.provider,
-    protocol: config.protocol,
-    host: config.host,
-    port: config.port,
+    configured: config.configured,
+    provider: 'brevo',
+    protocol: 'https',
+    host: 'api.brevo.com',
+    port: 443,
     secure: true,
     sender: config.sender,
-    verifyStatus: config.hasKey ? 'ready' : 'unconfigured',
-    verifyMessage: config.hasKey
-      ? `${config.provider === 'gmail_api' ? 'Gmail REST API' : 'Resend HTTPS API'} client ready on port 443 (Sender: ${config.sender}).`
-      : 'No email service configured. Please configure GMAIL_REFRESH_TOKEN in Render environment.',
+    hasApiKey: config.hasKey,
+    keyLength: config.keyLength,
+    isPlaceholder: config.isPlaceholder,
+    verifyStatus: config.configured ? 'ready' : 'unconfigured',
+    verifyMessage: config.configured
+      ? `Brevo HTTPS Transactional Email API ready on port 443 (Sender: ${config.sender}).`
+      : 'BREVO_API_KEY or BREVO_SENDER_EMAIL missing in Render environment.',
   };
 };
 
 /**
- * Runs non-blocking startup validation for Render logs.
+ * Non-blocking startup diagnostic check.
  */
 const verifySmtpOnStartup = () => {
   setTimeout(() => {
     const config = getSanitizedConfig();
     console.log('──────────────────────────────────────────────────────');
-    console.log(`[Email Service Diagnostic] Active Provider: ${config.provider.toUpperCase()} (HTTPS Port 443)`);
+    console.log('[Email Service Diagnostic] Active Provider: BREVO (HTTPS Port 443)');
     console.log(`[Email Service Diagnostic] Sender: ${config.sender}`);
+    console.log(`[Email Service Diagnostic] BREVO_API_KEY configured: ${config.hasKey} (${config.keyLength} chars)`);
 
-    if (config.provider === 'gmail_api') {
-      console.log('[Email Service Diagnostic] Mode: Arbitrary Recipients Allowed (via Google OAuth2 REST API)');
-      console.log('[Email Service Diagnostic] Status: GMAIL REST API READY & ACTIVE');
-    } else if (config.provider === 'resend') {
-      console.log('[Email Service Diagnostic] Mode: Resend HTTPS API');
-      console.log('[Email Service Diagnostic] Status: RESEND CLIENT READY & ACTIVE');
+    if (config.configured) {
+      console.log('[Email Service Diagnostic] Status: BREVO API READY & ACTIVE (Arbitrary Recipients Supported)');
     } else {
-      console.warn('[Email Service WARNING] No active email provider configured.');
+      console.warn('[Email Service WARNING] Brevo configuration is incomplete. Add BREVO_API_KEY and BREVO_SENDER_EMAIL to Render environment.');
     }
     console.log('──────────────────────────────────────────────────────');
   }, 1000);
