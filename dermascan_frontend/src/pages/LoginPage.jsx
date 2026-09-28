@@ -5,6 +5,7 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import OtpInput from '../components/OtpInput'
 import { Scan, Eye, EyeOff, Mail, Lock, KeyRound, ArrowLeft, CheckCircle2 } from 'lucide-react'
 import api, { authAPI } from '../api/axios'
+import GoogleAuthButton from '../components/GoogleAuthButton'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 
@@ -248,27 +249,16 @@ export default function LoginPage() {
           {/* VIEW 1: Standard Credentials Login */}
           {view === 'credentials' && (
             <div className="animate-fade-in-up">
-              {/* Google Sign In */}
-              {GOOGLE_CLIENT_ID ? (
-                <div className="mb-5">
-                  {googleLoading ? (
-                    <div className="flex items-center justify-center gap-2.5 w-full border border-slate-300 rounded-xl py-3 text-sm text-slate-600 bg-slate-50">
-                      <LoadingSpinner size="sm" />
-                      <span>Connecting with Google…</span>
-                    </div>
-                  ) : (
-                    <div className="w-full flex justify-center">
-                      <div ref={googleBtnRef} id="google-signin-btn" className="w-full flex justify-center" />
-                    </div>
-                  )}
+              {/* Google Sign In Button */}
+              <div className="mb-2">
+                <GoogleAuthButton width={340} />
 
-                  <div className="flex items-center gap-3 my-5">
-                    <div className="flex-1 h-px bg-slate-200" />
-                    <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">or sign in with email</span>
-                    <div className="flex-1 h-px bg-slate-200" />
-                  </div>
+                <div className="flex items-center gap-3 my-5">
+                  <div className="flex-1 h-px bg-slate-200" />
+                  <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">or sign in with email</span>
+                  <div className="flex-1 h-px bg-slate-200" />
                 </div>
-              ) : null}
+              </div>
 
               {/* Email + Password Form */}
               <form onSubmit={handleCredentialsSubmit} className="space-y-4" noValidate>

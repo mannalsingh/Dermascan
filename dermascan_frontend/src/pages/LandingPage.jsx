@@ -41,61 +41,10 @@ const highlights = [
   'Longitudinal risk trends & analytics',
 ]
 
+import GoogleAuthButton from '../components/GoogleAuthButton'
+
 export default function LandingPage() {
-  const { googleLogin, isAuthenticated } = useAuth()
-  const navigate = useNavigate()
-  const googleBtnRef = useRef(null)
-
-  const handleGoogleResponse = useCallback(async (response) => {
-    try {
-      await googleLogin(response.credential)
-      navigate('/dashboard', { replace: true })
-    } catch (err) {
-      console.error('Google sign-in error:', err)
-      navigate('/login')
-    }
-  }, [googleLogin, navigate])
-
-  useEffect(() => {
-    if (!GOOGLE_CLIENT_ID) return
-
-    const initGoogle = () => {
-      if (!window.google?.accounts?.id) return
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleResponse,
-        auto_select: false,
-        cancel_on_tap_outside: true,
-      })
-
-      if (googleBtnRef.current) {
-        googleBtnRef.current.innerHTML = ''
-        window.google.accounts.id.renderButton(googleBtnRef.current, {
-          type: 'standard',
-          theme: 'outline',
-          size: 'large',
-          text: 'continue_with',
-          shape: 'rectangular',
-          logo_alignment: 'left',
-          width: 280,
-        })
-      }
-    }
-
-    if (window.google?.accounts?.id) {
-      initGoogle()
-    } else {
-      const script = document.createElement('script')
-      script.src = 'https://accounts.google.com/gsi/client'
-      script.async = true
-      script.defer = true
-      script.onload = initGoogle
-      document.body.appendChild(script)
-      return () => {
-        if (document.body.contains(script)) document.body.removeChild(script)
-      }
-    }
-  }, [handleGoogleResponse])
+  const { isAuthenticated } = useAuth()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50/50 via-slate-50 to-emerald-50/30 text-slate-900">
@@ -113,7 +62,7 @@ export default function LandingPage() {
             </div>
           </Link>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             {isAuthenticated ? (
               <Link to="/dashboard" className="btn-primary text-sm py-2 px-4 flex items-center gap-1.5">
                 <span>Go to Dashboard</span>
@@ -121,7 +70,8 @@ export default function LandingPage() {
               </Link>
             ) : (
               <>
-                <Link to="/login" className="btn-secondary text-sm py-2 px-4">
+                <GoogleAuthButton width={195} className="hidden sm:flex" />
+                <Link to="/login" className="btn-secondary text-sm py-2 px-3.5">
                   Sign In
                 </Link>
                 <Link to="/register" className="btn-primary text-sm py-2 px-4">
@@ -154,27 +104,14 @@ export default function LandingPage() {
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-xl mx-auto mb-8">
+          <GoogleAuthButton width={230} />
           <Link
             to="/register"
-            className="btn-primary flex items-center justify-center gap-2 text-base px-8 py-3.5 w-full sm:w-auto font-semibold shadow-md shadow-teal-600/20"
+            className="btn-primary flex items-center justify-center gap-2 text-base px-8 py-3 w-full sm:w-auto font-semibold shadow-md shadow-teal-600/20"
           >
-            <span>Start Free Screening</span>
+            <span>Get Started Free</span>
             <ArrowRight className="h-4 w-4" />
           </Link>
-
-          {/* Root Continue with Google Button */}
-          {GOOGLE_CLIENT_ID ? (
-            <div className="w-full sm:w-auto flex justify-center">
-              <div ref={googleBtnRef} id="root-google-btn" className="flex justify-center" />
-            </div>
-          ) : (
-            <Link
-              to="/login"
-              className="btn-secondary flex items-center justify-center gap-2 text-base px-7 py-3 w-full sm:w-auto font-medium"
-            >
-              Sign In
-            </Link>
-          )}
         </div>
 
         <div className="flex items-center justify-center gap-6 text-xs text-slate-500 font-medium pt-2">
