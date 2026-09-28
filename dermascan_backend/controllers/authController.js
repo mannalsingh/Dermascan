@@ -632,6 +632,17 @@ exports.googleLogin = async (req, res, next) => {
 
     console.log(`[Google Auth] User authenticated with Google: ${user._id} (${cleanEmail}). Initiating OTP verification.`);
 
+    // ── Verify SMTP configuration exists before generating/saving OTP ──
+    const { getSanitizedConfig } = require('../config/emailService');
+    const smtpConfig = getSanitizedConfig();
+    if (!smtpConfig.hasUser || !smtpConfig.hasPass) {
+      console.error('[Google Auth] Cannot dispatch OTP: SMTP credentials missing or invalid in environment.');
+      return res.status(503).json({
+        success: false,
+        message: 'Email service is currently unconfigured. Please check server SMTP configuration.',
+      });
+    }
+
     // ── Generate cryptographically secure 4-digit numeric OTP ──
     const otp = generateSecureOtp();
     const otpHash = await bcrypt.hash(otp, 10);
@@ -896,6 +907,16 @@ exports.resendGoogleOtp = async (req, res, next) => {
           secondsLeft: waitSeconds,
         });
       }
+    }
+
+    // ── Verify SMTP configuration before generating/resending OTP ──
+    const { getSanitizedConfig } = require('../config/emailService');
+    const smtpConfig = getSanitizedConfig();
+    if (!smtpConfig.hasUser || !smtpConfig.hasPass) {
+      return res.status(503).json({
+        success: false,
+        message: 'Email service is currently unconfigured. Please check server SMTP configuration.',
+      });
     }
 
     // Invalidate previous OTPs for this session

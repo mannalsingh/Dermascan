@@ -1,3 +1,8 @@
+const dns = require('dns');
+if (typeof dns.setDefaultResultOrder === 'function') {
+  dns.setDefaultResultOrder('ipv4first');
+}
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -78,6 +83,9 @@ app.get('/health', async (req, res) => {
       configured: smtp.configured,
       host: smtp.host,
       port: smtp.port,
+      secure: smtp.secure,
+      ipFamily: smtp.ipFamily,
+      resolvedIp: smtp.resolvedIp,
       sender: smtp.sender,
       status: smtp.verifyStatus,
       detail: smtp.verifyMessage,
