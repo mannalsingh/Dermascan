@@ -2,12 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Brand Primary Tokens */
+  --color-primary: #0F8F87;
+  --color-primary-hover: #0B766F;
+  --color-primary-active: #09645E;
+  --color-primary-soft: #E8F6F4;
+  --color-primary-border: #BFE4DF;
+  --color-primary-ring: rgba(15, 143, 135, 0.18);
+
+  /* Typography System */
+  --color-text-heading: #102A43;
+  --color-text-primary: #243B53;
+  --color-text-secondary: #486581;
+  --color-text-muted: #829AB1;
+  --color-text-placeholder: #9FB3C8;
+
+  /* Background & Surface System */
+  --color-bg: #F5F9F9;
+  --color-bg-secondary: #EEF5F4;
+  --color-surface: #FFFFFF;
+  --color-surface-subtle: #FBFDFC;
+  --color-border: #D9E5E3;
+  --color-border-hover: #9BBFBB;
+  --color-input-border: #C7D8D6;
+  --color-input-border-hover: #9BBFBB;
+
+  /* Status Colors: Success, Error, Warning, Info */
+  --color-success: #176B45;
+  --color-success-bg: #EAF7F0;
+  --color-success-border: #B8DFC8;
+
+  --color-error: #B42318;
+  --color-error-bg: #FDF0F0;
+  --color-error-border: #F1C4C4;
+
+  --color-warning: #8A5A00;
+  --color-warning-bg: #FFF7E6;
+  --color-warning-border: #F4D7A1;
+
+  --color-info: #245B7A;
+  --color-info-bg: #EEF5FA;
+  --color-info-border: #C9DDEA;
+
+  /* Icon System */
+  --color-icon: #6B8791;
+  --color-icon-active: #0F8F87;
+
+  /* Subtle Medical Shadows */
+  --shadow-subtle-sm: 0 1px 3px rgba(16, 42, 67, 0.06);
+  --shadow-subtle-md: 0 8px 24px rgba(16, 42, 67, 0.08);
+  --shadow-subtle-lg: 0 16px 40px rgba(16, 42, 67, 0.10);
+}
+
 @layer base {
   * {
     box-sizing: border-box;
   }
   body {
-    @apply bg-[#F4FAF9] text-[#334E68] font-sans;
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -19,50 +74,235 @@
 }
 
 @layer components {
+  /* Buttons */
   .btn-primary {
-    @apply bg-[#0F9D92] hover:bg-[#0C857B] active:bg-[#096B63] text-white font-semibold py-2.5 px-6 rounded-xl transition-all duration-200 shadow-sm shadow-[#0F9D92]/20 disabled:opacity-50 disabled:cursor-not-allowed;
+    background-color: var(--color-primary);
+    color: #FFFFFF;
+    font-weight: 600;
+    padding: 0.625rem 1.5rem;
+    border-radius: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: background-color 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+    box-shadow: 0 1px 3px rgba(16, 42, 67, 0.06);
+    outline: none;
   }
+  .btn-primary:hover:not(:disabled) {
+    background-color: var(--color-primary-hover);
+  }
+  .btn-primary:active:not(:disabled) {
+    background-color: var(--color-primary-active);
+  }
+  .btn-primary:focus-visible {
+    box-shadow: 0 0 0 3px var(--color-primary-ring);
+  }
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   .btn-secondary {
-    @apply bg-white hover:bg-[#F8FAFC] active:bg-[#F1F5F9] text-[#102A43] font-semibold py-2.5 px-6 rounded-xl border border-[#D8E2EC] hover:border-[#BCCCDC] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    background-color: #FFFFFF;
+    color: var(--color-text-primary);
+    font-weight: 600;
+    padding: 0.625rem 1.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--color-border);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+    box-shadow: 0 1px 2px rgba(16, 42, 67, 0.04);
+    outline: none;
   }
+  .btn-secondary:hover:not(:disabled) {
+    background-color: #F8FAFC;
+    border-color: var(--color-border-hover);
+    color: var(--color-text-heading);
+  }
+  .btn-secondary:focus-visible {
+    box-shadow: 0 0 0 3px var(--color-primary-ring);
+  }
+  .btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   .btn-danger {
-    @apply bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-semibold py-2.5 px-6 rounded-xl transition-colors duration-200 shadow-sm shadow-rose-600/20;
+    background-color: var(--color-error);
+    color: #FFFFFF;
+    font-weight: 600;
+    padding: 0.625rem 1.5rem;
+    border-radius: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: background-color 150ms ease;
+    box-shadow: 0 1px 3px rgba(180, 35, 24, 0.15);
+    outline: none;
   }
+  .btn-danger:hover:not(:disabled) {
+    background-color: #991B1B;
+  }
+  .btn-danger:focus-visible {
+    box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.2);
+  }
+
+  /* Form Fields */
   .input-field {
-    @apply w-full px-4 py-3 bg-white border border-[#D8E2EC] hover:border-[#BCCCDC] rounded-xl text-[#102A43] placeholder-[#829AB1] text-sm focus:outline-none focus:border-[#0F9D92] focus:ring-4 focus:ring-[#0F9D92]/15 transition-all duration-200;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background-color: #FFFFFF;
+    border: 1px solid var(--color-input-border);
+    border-radius: 0.75rem;
+    color: var(--color-text-heading);
+    font-size: 0.875rem;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
   }
+  .input-field::placeholder {
+    color: var(--color-text-placeholder);
+  }
+  .input-field:hover:not(:disabled):not(:focus) {
+    border-color: var(--color-input-border-hover);
+  }
+  .input-field:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-ring);
+  }
+  .input-field:disabled {
+    background-color: #F8FAFC;
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 0.375rem;
+  }
+
+  /* Surface Cards */
   .card {
-    @apply bg-white rounded-2xl border border-[#E2ECEB] p-6 shadow-medical-card;
+    background-color: #FFFFFF;
+    border-radius: 1rem;
+    border: 1px solid var(--color-border);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-subtle-md);
   }
   .card-hover {
-    @apply card hover:shadow-lg transition-shadow duration-200 cursor-pointer;
+    transition: box-shadow 200ms ease, border-color 200ms ease;
   }
-  .badge-low {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200;
+  .card-hover:hover {
+    box-shadow: var(--shadow-subtle-lg);
+    border-color: var(--color-border-hover);
   }
-  .badge-medium {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200;
-  }
-  .badge-high {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200;
-  }
-  .badge-benign {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200;
-  }
-  .badge-malignant {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200;
-  }
+
+  /* Navigation */
   .nav-link {
-    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-[#627D98] hover:bg-[#F4FAF9] hover:text-[#0F9D92] transition-colors duration-150 font-medium;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    color: var(--color-text-secondary);
+    transition: background-color 150ms ease, color 150ms ease;
+    font-weight: 500;
+  }
+  .nav-link:hover {
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
   }
   .nav-link.active {
-    @apply bg-[#F4FAF9] text-[#0F9D92] font-semibold border-r-2 border-[#0F9D92];
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-weight: 600;
+    border-right: 2px solid var(--color-primary);
   }
+
+  /* Clinical Status Alerts */
+  .alert-error {
+    background-color: var(--color-error-bg);
+    border: 1px solid var(--color-error-border);
+    color: var(--color-error);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  .alert-success {
+    background-color: var(--color-success-bg);
+    border: 1px solid var(--color-success-border);
+    color: var(--color-success);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  .alert-warning {
+    background-color: var(--color-warning-bg);
+    border: 1px solid var(--color-warning-border);
+    color: var(--color-warning);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  .alert-info {
+    background-color: var(--color-info-bg);
+    border: 1px solid var(--color-info-border);
+    color: var(--color-info);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  /* Badges */
+  .badge-low, .badge-benign {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background-color: var(--color-success-bg);
+    color: var(--color-success);
+    border: 1px solid var(--color-success-border);
+  }
+  .badge-medium {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background-color: var(--color-warning-bg);
+    color: var(--color-warning);
+    border: 1px solid var(--color-warning-border);
+  }
+  .badge-high, .badge-malignant {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background-color: var(--color-error-bg);
+    color: var(--color-error);
+    border: 1px solid var(--color-error-border);
+  }
+
   .section-title {
-    @apply text-2xl font-bold text-[#102A43];
-  }
-  .label {
-    @apply block text-sm font-semibold text-[#102A43] mb-1.5;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text-heading);
   }
 }
 
@@ -75,67 +315,69 @@ html {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  @apply bg-gray-100;
+  background-color: #EEF5F4;
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 rounded-full;
+  background-color: #BFE4DF;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400;
-}
-
-.dropzone {
-  @apply border-2 border-dashed border-gray-300 rounded-xl p-8 text-center transition-all duration-200 cursor-pointer;
-}
-.dropzone:hover, .dropzone.active {
-  @apply border-teal-400 bg-teal-50;
-}
-
-.pulse-ring {
-  animation: pulseRing 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-}
-@keyframes pulseRing {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(15, 157, 146, 0.7); }
-  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(15, 157, 146, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(15, 157, 146, 0); }
-}
-
-.recharts-tooltip-wrapper {
-  outline: none !important;
-}
-
-.table-container {
-  @apply overflow-x-auto -mx-4 sm:mx-0;
+  background-color: #0F8F87;
 }
 
 /* Animations */
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
 @keyframes fadeInScale {
-  from { opacity: 0; transform: scale(0.95); }
+  from { opacity: 0; transform: scale(0.97); }
   to { opacity: 1; transform: scale(1); }
 }
 @keyframes slideInRight {
-  from { opacity: 0; transform: translateX(30px); }
+  from { opacity: 0; transform: translateX(20px); }
   to { opacity: 1; transform: translateX(0); }
 }
-.animate-fade-in-up { animation: fadeInUp 0.4s ease-out both; }
-.animate-fade-in-scale { animation: fadeInScale 0.3s ease-out both; }
-.animate-slide-in-right { animation: slideInRight 0.35s ease-out both; }
+.animate-fade-in-up { animation: fadeInUp 0.35s ease-out both; }
+.animate-fade-in-scale { animation: fadeInScale 0.25s ease-out both; }
+.animate-slide-in-right { animation: slideInRight 0.3s ease-out both; }
 
-/* OTP Input */
+/* OTP Input Boxes */
 .otp-input {
-  @apply w-14 h-14 text-center text-2xl font-bold border-2 border-[#D8E2EC] rounded-xl text-[#102A43]
-    focus:outline-none focus:border-[#0F9D92] focus:ring-4 focus:ring-[#0F9D92]/15
-    transition-all duration-200 bg-white;
+  width: 3.5rem;
+  height: 3.5rem;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  border: 2px solid var(--color-input-border);
+  border-radius: 0.75rem;
+  color: var(--color-text-heading);
+  background-color: #FFFFFF;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+  outline: none;
+}
+.otp-input:hover:not(:disabled):not(:focus) {
+  border-color: var(--color-input-border-hover);
+}
+.otp-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-ring);
 }
 .otp-input:not(:placeholder-shown) {
-  @apply border-[#0F9D92] bg-[#F4FAF9] text-[#102A43];
+  border-color: var(--color-primary);
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text-heading);
 }
 
-/* Modal overlay */
+/* Modal Overlay */
 .modal-overlay {
-  @apply fixed inset-0 bg-[#102A43]/50 backdrop-blur-sm z-50 flex items-center justify-center p-4;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(16, 42, 67, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
 }

@@ -210,18 +210,18 @@ export default function OtpInput({
   }
 
   const allFilled = otp.every((d) => d !== '')
-  const timerWarning = expiryLeft < 60 ? 'text-[#7F1D1D] font-bold' : 'text-[#0F9D92] font-semibold'
+  const timerWarning = expiryLeft < 60 ? 'text-[#B42318] font-bold' : 'text-[#0F8F87] font-semibold'
 
   return (
     <div className="animate-fade-in-scale">
       {/* Icon & Title */}
       <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-14 h-14 bg-[#F4FAF9] border border-[#E2ECEB] rounded-2xl mb-3 shadow-xs">
-          <ShieldCheck className="h-7 w-7 text-[#0F9D92]" />
+        <div className="inline-flex items-center justify-center w-14 h-14 bg-[#E8F6F4] border border-[#BFE4DF] rounded-2xl mb-3 shadow-xs">
+          <ShieldCheck className="h-7 w-7 text-[#0F8F87]" />
         </div>
         <h2 className="text-2xl font-bold text-[#102A43] tracking-tight mb-1.5">{title}</h2>
-        <p className="text-[#334E68] text-sm mb-1">{message}</p>
-        <p className="text-xs text-[#627D98] font-mono tracking-wide bg-[#F4FAF9] inline-block px-3 py-1 rounded-lg border border-[#E2ECEB]">
+        <p className="text-[#486581] text-sm mb-1">{message}</p>
+        <p className="text-xs text-[#486581] font-mono tracking-wide bg-[#F5F9F9] inline-block px-3 py-1 rounded-lg border border-[#D9E5E3]">
           {displayEmail}
         </p>
       </div>
@@ -240,7 +240,7 @@ export default function OtpInput({
               onChange={(e) => handleChange(i, e.target.value)}
               onKeyDown={(e) => handleKeyDown(i, e)}
               onPaste={handlePaste}
-              className="otp-input w-14 h-14 text-center text-2xl font-bold rounded-xl border-2 border-[#D8E2EC] focus:border-[#0F9D92] focus:ring-4 focus:ring-[#0F9D92]/15 outline-none transition-all"
+              className="otp-input w-14 h-14 text-center text-2xl font-bold rounded-xl border-2 border-[#C7D8D6] focus:border-[#0F8F87] focus:ring-4 focus:ring-[#0F8F87]/15 outline-none transition-all"
               placeholder="•"
               disabled={loading}
               aria-label={`Digit ${i + 1}`}
@@ -260,15 +260,15 @@ export default function OtpInput({
 
         {/* Error Notification */}
         {error && (
-          <div className="mb-4 p-3 bg-[#FEF2F2] border border-[#FECDCA] rounded-xl text-xs text-[#7F1D1D] flex items-start gap-2 animate-fade-in-scale">
-            <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+          <div className="mb-4 p-3 bg-[#FDF0F0] border border-[#F1C4C4] rounded-xl text-xs text-[#B42318] flex items-start gap-2 animate-fade-in-scale">
+            <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5 text-[#B42318]" />
             <span className="font-medium leading-relaxed">{error}</span>
           </div>
         )}
 
         {/* Resend Success Message */}
         {resendSuccess && (
-          <div className="mb-4 p-3 bg-[#F0FDF4] border border-[#C3E6CD] rounded-xl text-xs text-[#1B4D2E] font-medium text-center animate-fade-in-scale">
+          <div className="mb-4 p-3 bg-[#EAF7F0] border border-[#B8DFC8] rounded-xl text-xs text-[#176B45] font-medium text-center animate-fade-in-scale">
             {resendSuccess}
           </div>
         )}
@@ -293,18 +293,18 @@ export default function OtpInput({
         </button>
 
         {/* Resend Action with 30s Cooldown */}
-        <div className="text-center text-sm text-[#627D98] mb-2">
+        <div className="text-center text-sm text-[#486581] mb-2">
           {cooldownLeft > 0 ? (
             <p className="text-xs text-[#829AB1]">
               Resend code available in{' '}
-              <span className="font-semibold text-[#334E68]">{cooldownLeft}s</span>
+              <span className="font-semibold text-[#243B53]">{cooldownLeft}s</span>
             </p>
           ) : (
             <button
               type="button"
               onClick={handleResend}
               disabled={resending}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0F9D92] hover:text-[#0C857B] transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0F8F87] hover:text-[#0B766F] transition-colors disabled:opacity-50"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${resending ? 'animate-spin' : ''}`} />
               {resending ? 'Sending code…' : 'Resend code'}
@@ -318,7 +318,7 @@ export default function OtpInput({
             type="button"
             onClick={onBack}
             disabled={loading}
-            className="mt-3 w-full flex items-center justify-center gap-1.5 text-[#627D98] hover:text-[#102A43] text-xs font-medium transition-colors"
+            className="mt-3 w-full flex items-center justify-center gap-1.5 text-[#486581] hover:text-[#102A43] text-xs font-medium transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to Sign In

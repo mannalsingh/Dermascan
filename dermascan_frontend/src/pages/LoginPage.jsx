@@ -167,13 +167,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4FAF9] flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-[#F5F9F9] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
 
         {/* Brand Header */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2.5 mb-4 group">
-            <div className="w-11 h-11 bg-[#0F9D92] group-hover:bg-[#0C857B] text-white rounded-2xl flex items-center justify-center shadow-sm shadow-[#0F9D92]/20 transition-all duration-200">
+            <div className="w-11 h-11 bg-[#0F8F87] group-hover:bg-[#0B766F] text-white rounded-2xl flex items-center justify-center shadow-xs transition-all duration-200">
               <Scan className="h-6 w-6" />
             </div>
             <span className="text-2xl font-bold text-[#102A43] tracking-tight">DermaScan AI</span>
@@ -185,7 +185,7 @@ export default function LoginPage() {
             {view === 'forgot' && 'Reset your password'}
             {view === 'reset' && 'Create new password'}
           </h1>
-          <p className="text-[#627D98] text-sm mt-1">
+          <p className="text-[#486581] text-sm mt-1">
             {view === 'credentials' && 'Sign in to access your skin screening portal'}
             {view === 'otp' && 'Please confirm your identity with the security code'}
             {view === 'google_otp' && 'Confirm your Google sign-in with the verification code'}
@@ -199,14 +199,14 @@ export default function LoginPage() {
 
           {/* Alert Messages */}
           {error && (
-            <div className="mb-5 p-3.5 bg-[#FEF2F2] border border-[#FECDCA] rounded-xl text-sm text-[#7F1D1D] font-medium animate-fade-in-scale">
+            <div className="mb-5 p-3.5 bg-[#FDF0F0] border border-[#F1C4C4] rounded-xl text-sm text-[#B42318] font-medium animate-fade-in-scale">
               {error}
             </div>
           )}
 
           {successMsg && (
-            <div className="mb-5 p-3.5 bg-[#F0FDF4] border border-[#C3E6CD] rounded-xl text-sm text-[#1B4D2E] font-medium flex items-center gap-2 animate-fade-in-scale">
-              <CheckCircle2 className="h-4 w-4 text-[#0F9D92] flex-shrink-0" />
+            <div className="mb-5 p-3.5 bg-[#EAF7F0] border border-[#B8DFC8] rounded-xl text-sm text-[#176B45] font-medium flex items-center gap-2 animate-fade-in-scale">
+              <CheckCircle2 className="h-4 w-4 text-[#176B45] flex-shrink-0" />
               <span>{successMsg}</span>
             </div>
           )}
@@ -226,9 +226,9 @@ export default function LoginPage() {
                 />
 
                 <div className="flex items-center gap-3 my-5">
-                  <div className="flex-1 h-px bg-[#E2ECEB]" />
+                  <div className="flex-1 h-px bg-[#D9E5E3]" />
                   <span className="text-xs font-semibold text-[#829AB1] uppercase tracking-wider">or sign in with email</span>
-                  <div className="flex-1 h-px bg-[#E2ECEB]" />
+                  <div className="flex-1 h-px bg-[#D9E5E3]" />
                 </div>
               </div>
 
@@ -237,7 +237,7 @@ export default function LoginPage() {
                 <div>
                   <label htmlFor="email" className="label">Email Address</label>
                   <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#829AB1]" />
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B8791]" />
                     <input
                       id="email"
                       name="email"
@@ -259,13 +259,13 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => { setError(''); setSuccessMsg(''); setResetEmail(form.email); setView('forgot'); }}
-                      className="text-xs font-semibold text-[#0F9D92] hover:text-[#0C857B] transition-colors"
+                      className="text-xs font-semibold text-[#0F8F87] hover:text-[#0B766F] transition-colors"
                     >
                       Forgot password?
                     </button>
                   </div>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#829AB1]" />
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B8791]" />
                     <input
                       id="password"
                       name="password"
@@ -281,7 +281,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowPwd(!showPwd)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#829AB1] hover:text-[#334E68] transition-colors"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#6B8791] hover:text-[#243B53] transition-colors"
                       tabIndex={-1}
                       aria-label={showPwd ? 'Hide password' : 'Show password'}
                     >
@@ -300,9 +300,9 @@ export default function LoginPage() {
                 </button>
               </form>
 
-              <p className="text-center text-sm text-[#627D98] mt-6">
+              <p className="text-center text-sm text-[#486581] mt-6">
                 Don't have an account?{' '}
-                <Link to="/register" className="text-[#0F9D92] hover:text-[#0C857B] font-semibold hover:underline">
+                <Link to="/register" className="text-[#0F8F87] hover:text-[#0B766F] font-semibold hover:underline">
                   Create one
                 </Link>
               </p>
@@ -351,7 +351,7 @@ export default function LoginPage() {
                 <div>
                   <label htmlFor="resetEmail" className="label">Registered Email</label>
                   <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#829AB1]" />
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B8791]" />
                     <input
                       id="resetEmail"
                       type="email"
@@ -377,7 +377,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => { setError(''); setView('credentials'); }}
-                  className="w-full flex items-center justify-center gap-1.5 text-[#627D98] hover:text-[#102A43] text-xs font-medium pt-2 transition-colors"
+                  className="w-full flex items-center justify-center gap-1.5 text-[#486581] hover:text-[#102A43] text-xs font-medium pt-2 transition-colors"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" />
                   Back to Sign In
@@ -425,7 +425,7 @@ export default function LoginPage() {
                 <div>
                   <label htmlFor="newPassword" className="label">New Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#829AB1]" />
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B8791]" />
                     <input
                       id="newPassword"
                       type={showNewPwd ? 'text' : 'password'}
@@ -439,7 +439,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowNewPwd(!showNewPwd)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#829AB1] hover:text-[#334E68]"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#6B8791] hover:text-[#243B53]"
                       tabIndex={-1}
                     >
                       {showNewPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -450,7 +450,7 @@ export default function LoginPage() {
                 <div>
                   <label htmlFor="confirmPassword" className="label">Confirm New Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#829AB1]" />
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B8791]" />
                     <input
                       id="confirmPassword"
                       type={showNewPwd ? 'text' : 'password'}
@@ -476,7 +476,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => { setError(''); setView('credentials'); }}
-                  className="w-full flex items-center justify-center gap-1.5 text-[#627D98] hover:text-[#102A43] text-xs font-medium pt-2 transition-colors"
+                  className="w-full flex items-center justify-center gap-1.5 text-[#486581] hover:text-[#102A43] text-xs font-medium pt-2 transition-colors"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" />
                   Back to Sign In

@@ -79,7 +79,7 @@ function PasswordChangeForm() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="label" htmlFor="currentPassword">
-          <Lock className="inline h-3.5 w-3.5 mr-1 text-teal-600" />Current Password
+          <Lock className="inline h-3.5 w-3.5 mr-1 text-[#6B8791]" />Current Password
         </label>
         <div className="relative">
           <input
@@ -95,7 +95,7 @@ function PasswordChangeForm() {
           <button
             type="button"
             onClick={() => setShowCurrent(!showCurrent)}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#6B8791] hover:text-[#243B53]"
             tabIndex={-1}
           >
             {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -105,7 +105,7 @@ function PasswordChangeForm() {
 
       <div>
         <label className="label" htmlFor="newPassword">
-          <KeyRound className="inline h-3.5 w-3.5 mr-1 text-teal-600" />New Password
+          <KeyRound className="inline h-3.5 w-3.5 mr-1 text-[#6B8791]" />New Password
         </label>
         <div className="relative">
           <input
@@ -121,7 +121,7 @@ function PasswordChangeForm() {
           <button
             type="button"
             onClick={() => setShowNew(!showNew)}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#6B8791] hover:text-[#243B53]"
             tabIndex={-1}
           >
             {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -131,7 +131,7 @@ function PasswordChangeForm() {
 
       <div>
         <label className="label" htmlFor="confirmPassword">
-          <KeyRound className="inline h-3.5 w-3.5 mr-1 text-teal-600" />Confirm New Password
+          <KeyRound className="inline h-3.5 w-3.5 mr-1 text-[#6B8791]" />Confirm New Password
         </label>
         <input
           id="confirmPassword"
@@ -277,20 +277,20 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Avatar card ───────────────────────────────────────────────────── */}
-        <div className="card rounded-2xl shadow-sm mb-6">
+        <div className="card rounded-2xl shadow-xs mb-6">
           <div className="flex items-center gap-5">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-teal-400 to-teal-700 flex items-center justify-center flex-shrink-0 shadow-lg shadow-teal-400/30">
+            <div className="w-24 h-24 rounded-full bg-[#0F8F87] flex items-center justify-center flex-shrink-0 shadow-xs">
               <span className="text-4xl font-bold text-white">
                 {displayName[0]?.toUpperCase() || 'U'}
               </span>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">{displayName}</h2>
-              <div className="flex items-center gap-1.5 text-gray-500 mt-1">
-                <Mail className="h-4 w-4 text-teal-500" />
+              <h2 className="text-xl font-bold text-[#102A43]">{displayName}</h2>
+              <div className="flex items-center gap-1.5 text-[#486581] mt-1">
+                <Mail className="h-4 w-4 text-[#6B8791]" />
                 <span className="text-sm">{displayEmail}</span>
               </div>
-              <span className="inline-flex mt-2 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-100 text-teal-800 capitalize">
+              <span className="inline-flex mt-2 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#E8F6F4] text-[#0F8F87] border border-[#BFE4DF] capitalize">
                 {user?.role || 'user'}
               </span>
             </div>
@@ -298,18 +298,18 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Edit Profile card ─────────────────────────────────────────────── */}
-        <div className="card rounded-2xl shadow-sm mb-6">
+        <div className="card rounded-2xl shadow-xs mb-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="border-l-4 border-teal-500 pl-3">
-              <h2 className="font-bold text-gray-900 text-lg">Edit Profile</h2>
-              <p className="text-xs text-gray-400">Update your personal details</p>
+            <div className="border-l-4 border-[#0F8F87] pl-3">
+              <h2 className="font-bold text-[#102A43] text-lg">Edit Profile</h2>
+              <p className="text-xs text-[#829AB1]">Update your personal details</p>
             </div>
           </div>
 
           <form onSubmit={handleSave} className="space-y-5">
             <div>
               <label className="label" htmlFor="name">
-                <User className="inline h-3.5 w-3.5 mr-1 text-teal-500" />Full Name
+                <User className="inline h-3.5 w-3.5 mr-1 text-[#6B8791]" />Full Name
               </label>
               <input
                 id="name" name="name" type="text"
@@ -320,7 +320,7 @@ export default function ProfilePage() {
 
             <div>
               <label className="label" htmlFor="phone">
-                <Phone className="inline h-3.5 w-3.5 mr-1 text-teal-500" />Phone number
+                <Phone className="inline h-3.5 w-3.5 mr-1 text-[#6B8791]" />Phone number
               </label>
               <input
                 id="phone" name="phone" type="tel"
@@ -331,7 +331,7 @@ export default function ProfilePage() {
 
             <div>
               <label className="label" htmlFor="gender">
-                <User className="inline h-3.5 w-3.5 mr-1 text-teal-500" />Gender
+                <User className="inline h-3.5 w-3.5 mr-1 text-[#6B8791]" />Gender
               </label>
               <select
                 id="gender" name="gender"
@@ -348,7 +348,7 @@ export default function ProfilePage() {
 
             <div>
               <label className="label" htmlFor="date_of_birth">
-                <Calendar className="inline h-3.5 w-3.5 mr-1 text-teal-500" />Date of birth
+                <Calendar className="inline h-3.5 w-3.5 mr-1 text-[#6B8791]" />Date of birth
               </label>
               <input
                 id="date_of_birth" name="date_of_birth" type="date"
@@ -360,7 +360,7 @@ export default function ProfilePage() {
 
             <div>
               <label className="label" htmlFor="address">
-                <MapPin className="inline h-3.5 w-3.5 mr-1 text-teal-500" />Address
+                <MapPin className="inline h-3.5 w-3.5 mr-1 text-[#6B8791]" />Address
               </label>
               <textarea
                 id="address" name="address"
@@ -372,7 +372,7 @@ export default function ProfilePage() {
 
             <button
               type="submit" disabled={saving}
-              className="w-full bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600 text-white font-semibold py-3 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-md shadow-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary w-full py-3 flex items-center justify-center gap-2 text-sm font-semibold"
             >
               {saving ? <LoadingSpinner size="sm" /> : <Save className="h-4 w-4" />}
               {saving ? 'Saving…' : 'Save Changes'}
@@ -381,18 +381,18 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Email Change card ─────────────────────────────────────────────── */}
-        <div className="card rounded-2xl shadow-sm mb-6">
+        <div className="card rounded-2xl shadow-xs mb-6">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
-              <div className="border-l-4 border-indigo-500 pl-3">
-                <h2 className="font-bold text-gray-900 text-lg">Change Email Address</h2>
-                <p className="text-xs text-gray-400">Update the email linked to your account</p>
+              <div className="border-l-4 border-[#0F8F87] pl-3">
+                <h2 className="font-bold text-[#102A43] text-lg">Change Email Address</h2>
+                <p className="text-xs text-[#829AB1]">Update the email linked to your account</p>
               </div>
             </div>
             {emailPanel === 'idle' && (
               <button
                 onClick={() => { setEmailPanel('form'); setEmailError(''); setNewEmail('') }}
-                className="inline-flex items-center gap-1.5 text-sm text-teal-600 hover:text-teal-700 font-medium transition-colors"
+                className="inline-flex items-center gap-1.5 text-sm text-[#0F8F87] hover:text-[#0B766F] font-semibold transition-colors"
               >
                 <Edit3 className="h-4 w-4" />
                 Change
@@ -401,7 +401,7 @@ export default function ProfilePage() {
             {emailPanel !== 'idle' && (
               <button
                 onClick={() => { setEmailPanel('idle'); setEmailError(''); setNewEmail('') }}
-                className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+                className="inline-flex items-center gap-1 text-sm text-[#829AB1] hover:text-[#243B53] transition-colors"
               >
                 <X className="h-4 w-4" />
                 Cancel
@@ -410,11 +410,11 @@ export default function ProfilePage() {
           </div>
 
           {/* Current email display */}
-          <div className="flex items-center gap-3 p-3.5 bg-gray-50 rounded-xl mb-4">
-            <Mail className="h-4 w-4 text-teal-500 flex-shrink-0" />
+          <div className="flex items-center gap-3 p-3.5 bg-[#F5F9F9] border border-[#D9E5E3] rounded-xl mb-4">
+            <Mail className="h-4 w-4 text-[#6B8791] flex-shrink-0" />
             <div>
-              <p className="text-xs text-gray-400 font-medium">Current email</p>
-              <p className="text-sm text-gray-800 font-semibold">{displayEmail}</p>
+              <p className="text-xs text-[#829AB1] font-medium">Current email</p>
+              <p className="text-sm text-[#102A43] font-semibold">{displayEmail}</p>
             </div>
           </div>
 
@@ -424,7 +424,7 @@ export default function ProfilePage() {
               <div>
                 <label className="label" htmlFor="newEmail">New email address</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B8791]" />
                   <input
                     id="newEmail" type="email"
                     value={newEmail}
@@ -435,7 +435,7 @@ export default function ProfilePage() {
                 </div>
               </div>
               {emailError && (
-                <p className="text-sm text-red-600">{emailError}</p>
+                <p className="text-sm text-[#B42318]">{emailError}</p>
               )}
               <button
                 type="button"
@@ -451,9 +451,9 @@ export default function ProfilePage() {
 
           {/* OTP panel */}
           {emailPanel === 'otp' && (
-            <div className="animate-fade-in-scale rounded-2xl bg-slate-50 border border-slate-200 p-6">
+            <div className="animate-fade-in-scale rounded-2xl bg-[#F5F9F9] border border-[#D9E5E3] p-6">
               {emailError && (
-                <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-sm text-rose-700 text-center font-medium">
+                <div className="mb-4 p-3 bg-[#FDF0F0] border border-[#F1C4C4] rounded-xl text-sm text-[#B42318] text-center font-medium">
                   {emailError}
                 </div>
               )}
@@ -468,10 +468,10 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Security & Password card ──────────────────────────────────────── */}
-        <div className="card rounded-2xl shadow-sm mb-6">
-          <div className="border-l-4 border-teal-500 pl-3 mb-5">
-            <h2 className="font-bold text-gray-900 text-lg">Security & Password</h2>
-            <p className="text-xs text-gray-500">Update your account password</p>
+        <div className="card rounded-2xl shadow-xs mb-6">
+          <div className="border-l-4 border-[#0F8F87] pl-3 mb-5">
+            <h2 className="font-bold text-[#102A43] text-lg">Security & Password</h2>
+            <p className="text-xs text-[#829AB1]">Update your account password</p>
           </div>
 
           <PasswordChangeForm />

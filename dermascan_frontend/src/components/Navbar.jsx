@@ -64,15 +64,15 @@ export default function Navbar() {
       />
 
       {/* ── Desktop sidebar ─────────────────────────────────────────────────── */}
-      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-[#E2ECEB] min-h-screen fixed left-0 top-0 z-30">
+      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-[#D9E5E3] min-h-screen fixed left-0 top-0 z-30">
         
-        <div className="flex items-center gap-3 px-6 py-5 border-b border-[#E2ECEB]">
-          <div className="flex items-center justify-center w-9 h-9 bg-[#0F9D92] rounded-xl text-white shadow-xs">
+        <div className="flex items-center gap-3 px-6 py-5 border-b border-[#D9E5E3]">
+          <div className="flex items-center justify-center w-9 h-9 bg-[#0F8F87] rounded-xl text-white shadow-xs">
             <Scan className="h-5 w-5" />
           </div>
           <div>
             <span className="font-bold text-[#102A43] text-lg leading-none">DermaScan</span>
-            <span className="block text-xs text-[#0F9D92] font-semibold mt-0.5">AI Clinical</span>
+            <span className="block text-xs text-[#0F8F87] font-semibold mt-0.5">AI Clinical</span>
           </div>
         </div>
 
@@ -82,21 +82,21 @@ export default function Navbar() {
           ))}
         </nav>
 
-        <div className="px-3 py-4 border-t border-[#E2ECEB]">
+        <div className="px-3 py-4 border-t border-[#D9E5E3]">
           <div className="flex items-center gap-3 px-3 py-2 mb-2">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#F4FAF9] border border-[#E2ECEB] flex items-center justify-center">
-              <span className="text-sm font-semibold text-[#0F9D92]">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#F5F9F9] border border-[#D9E5E3] flex items-center justify-center">
+              <span className="text-sm font-semibold text-[#0F8F87]">
                 {user?.name?.[0]?.toUpperCase() || 'U'}
               </span>
             </div>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-[#102A43] truncate">{user?.name || 'User'}</p>
-              <p className="text-xs text-[#627D98] truncate">{user?.email || ''}</p>
+              <p className="text-xs text-[#486581] truncate">{user?.email || ''}</p>
             </div>
           </div>
           <button
             onClick={handleLogout}
-            className="nav-link w-full text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+            className="nav-link w-full text-[#B42318] hover:bg-[#FDF0F0] hover:text-[#991B1B]"
           >
             <LogOut className="h-5 w-5" />
             <span>Logout</span>
@@ -105,16 +105,16 @@ export default function Navbar() {
       </aside>
 
       {/* ── Mobile header ───────────────────────────────────────────────────── */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-[#E2ECEB] px-4 h-14 flex items-center justify-between">
+      <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-[#D9E5E3] px-4 h-14 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-8 h-8 bg-[#0F9D92] rounded-xl text-white">
+          <div className="flex items-center justify-center w-8 h-8 bg-[#0F8F87] rounded-xl text-white">
             <Scan className="h-4 w-4" />
           </div>
           <span className="font-bold text-[#102A43]">DermaScan AI</span>
         </div>
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="p-2 rounded-lg text-[#334E68] hover:bg-[#F4FAF9] transition-colors"
+          className="p-2 rounded-lg text-[#243B53] hover:bg-[#F5F9F9] transition-colors"
           aria-label="Toggle menu"
         >
           {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -129,27 +129,27 @@ export default function Navbar() {
             onClick={closeMobile}
           />
           
-          <div className="md:hidden fixed top-14 left-0 right-0 z-50 bg-white border-b border-[#E2ECEB] shadow-xl">
+          <div className="md:hidden fixed top-14 left-0 right-0 z-50 bg-white border-b border-[#D9E5E3] shadow-xl">
             <nav className="px-3 py-3 space-y-1">
               {navItems.map((item) => (
                 <NavLink key={item.to} item={item} onClick={closeMobile} />
               ))}
             </nav>
-            <div className="px-3 py-3 border-t border-[#E2ECEB]">
+            <div className="px-3 py-3 border-t border-[#D9E5E3]">
               <div className="flex items-center gap-3 px-3 py-2 mb-2">
-                <div className="w-8 h-8 rounded-full bg-[#F4FAF9] border border-[#E2ECEB] flex items-center justify-center">
-                  <span className="text-sm font-semibold text-[#0F9D92]">
+                <div className="w-8 h-8 rounded-full bg-[#F5F9F9] border border-[#D9E5E3] flex items-center justify-center">
+                  <span className="text-sm font-semibold text-[#0F8F87]">
                     {user?.name?.[0]?.toUpperCase() || 'U'}
                   </span>
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-[#102A43]">{user?.name || 'User'}</p>
-                  <p className="text-xs text-[#627D98]">{user?.email || ''}</p>
+                  <p className="text-xs text-[#486581]">{user?.email || ''}</p>
                 </div>
               </div>
               <button
                 onClick={handleLogout}
-                className="nav-link w-full text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                className="nav-link w-full text-[#B42318] hover:bg-[#FDF0F0] hover:text-[#991B1B]"
               >
                 <LogOut className="h-5 w-5" />
                 <span>Logout</span>
