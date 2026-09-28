@@ -657,6 +657,7 @@ exports.googleLogin = async (req, res, next) => {
       await sendOtpEmail(cleanEmail, otp, 'google_login');
     } catch (emailErr) {
       console.error('[Google Auth] Failed to dispatch OTP email:', emailErr.message);
+      await OtpToken.deleteMany({ userId: user._id, type: 'google_login' });
       return res.status(500).json({
         success: false,
         message: 'Failed to dispatch verification email. Please verify SMTP configuration and try again.',
@@ -766,11 +767,15 @@ exports.verifyGoogleOtp = async (req, res, next) => {
     // Verify hashed OTP using bcrypt
     const isMatch = await bcrypt.compare(otp, tokenDoc.otpHash);
     if (!isMatch) {
-      tokenDoc.attempts += 1;
-      await tokenDoc.save();
-      const remaining = tokenDoc.maxAttempts - tokenDoc.attempts;
+      // Atomic attempt counter increment to prevent concurrent brute-force bypass
+      const updated = await OtpToken.findOneAndUpdate(
+        { _id: tokenDoc._id },
+        { $inc: { attempts: 1 } },
+        { new: true }
+      );
+      const remaining = updated ? updated.maxAttempts - updated.attempts : 0;
 
-      if (remaining <= 0) {
+      if (!updated || remaining <= 0) {
         await OtpToken.deleteOne({ _id: tokenDoc._id });
         return res.status(429).json({
           success: false,
@@ -784,9 +789,19 @@ exports.verifyGoogleOtp = async (req, res, next) => {
       });
     }
 
-    // Atomic consumption: Mark OTP as used to prevent replay
-    tokenDoc.used = true;
-    await tokenDoc.save();
+    // Atomic consumption: Atomically mark OTP as used where used is false to prevent race conditions & replay
+    const consumedDoc = await OtpToken.findOneAndUpdate(
+      { _id: tokenDoc._id, used: false },
+      { $set: { used: true } },
+      { new: true }
+    );
+
+    if (!consumedDoc) {
+      return res.status(400).json({
+        success: false,
+        message: 'Verification code has already been used. Please request a new code.',
+      });
+    }
 
     // Fetch user record
     const user = await User.findById(decoded.userId);
@@ -906,6 +921,7 @@ exports.resendGoogleOtp = async (req, res, next) => {
       await sendOtpEmail(decoded.email, newOtp, 'google_login');
     } catch (emailErr) {
       console.error('[resendGoogleOtp] Email delivery failed:', emailErr.message);
+      await OtpToken.deleteMany({ userId: decoded.userId, type: 'google_login' });
       return res.status(500).json({
         success: false,
         message: 'Failed to send verification email. Please try again.',
