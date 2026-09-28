@@ -54,6 +54,14 @@ app.use('/api/user', userRoutes);
 app.use('/api/screening', screeningRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'DermaScan AI Backend API is running successfully',
+    health: '/health'
+  });
+});
+
 app.get('/health', (req, res) => {
   const isConnected = mongoose.connection.readyState === 1;
   res.json({
@@ -75,4 +83,6 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
+  console.log(`[Server] DermaScan AI backend is running on http://localhost:${PORT}`);
 });
+
