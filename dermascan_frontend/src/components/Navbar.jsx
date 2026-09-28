@@ -64,15 +64,15 @@ export default function Navbar() {
       />
 
       {/* ── Desktop sidebar ─────────────────────────────────────────────────── */}
-      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 min-h-screen fixed left-0 top-0 z-30">
+      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-[#E2ECEB] min-h-screen fixed left-0 top-0 z-30">
         
-        <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-100">
-          <div className="flex items-center justify-center w-9 h-9 bg-teal-700 rounded-lg">
-            <Scan className="h-5 w-5 text-white" />
+        <div className="flex items-center gap-3 px-6 py-5 border-b border-[#E2ECEB]">
+          <div className="flex items-center justify-center w-9 h-9 bg-[#0F9D92] rounded-xl text-white shadow-xs">
+            <Scan className="h-5 w-5" />
           </div>
           <div>
-            <span className="font-bold text-gray-900 text-lg leading-none">DermaScan</span>
-            <span className="block text-xs text-teal-600 font-medium">AI Assistant</span>
+            <span className="font-bold text-[#102A43] text-lg leading-none">DermaScan</span>
+            <span className="block text-xs text-[#0F9D92] font-semibold mt-0.5">AI Clinical</span>
           </div>
         </div>
 
@@ -82,21 +82,21 @@ export default function Navbar() {
           ))}
         </nav>
 
-        <div className="px-3 py-4 border-t border-gray-100">
+        <div className="px-3 py-4 border-t border-[#E2ECEB]">
           <div className="flex items-center gap-3 px-3 py-2 mb-2">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
-              <span className="text-sm font-semibold text-teal-700">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#F4FAF9] border border-[#E2ECEB] flex items-center justify-center">
+              <span className="text-sm font-semibold text-[#0F9D92]">
                 {user?.name?.[0]?.toUpperCase() || 'U'}
               </span>
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-900 truncate">{user?.name || 'User'}</p>
-              <p className="text-xs text-gray-500 truncate">{user?.email || ''}</p>
+              <p className="text-sm font-semibold text-[#102A43] truncate">{user?.name || 'User'}</p>
+              <p className="text-xs text-[#627D98] truncate">{user?.email || ''}</p>
             </div>
           </div>
           <button
             onClick={handleLogout}
-            className="nav-link w-full text-red-600 hover:bg-red-50 hover:text-red-700"
+            className="nav-link w-full text-rose-600 hover:bg-rose-50 hover:text-rose-700"
           >
             <LogOut className="h-5 w-5" />
             <span>Logout</span>
@@ -105,16 +105,16 @@ export default function Navbar() {
       </aside>
 
       {/* ── Mobile header ───────────────────────────────────────────────────── */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 px-4 h-14 flex items-center justify-between">
+      <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-[#E2ECEB] px-4 h-14 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-8 h-8 bg-teal-700 rounded-lg">
-            <Scan className="h-4 w-4 text-white" />
+          <div className="flex items-center justify-center w-8 h-8 bg-[#0F9D92] rounded-xl text-white">
+            <Scan className="h-4 w-4" />
           </div>
-          <span className="font-bold text-gray-900">DermaScan AI</span>
+          <span className="font-bold text-[#102A43]">DermaScan AI</span>
         </div>
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          className="p-2 rounded-lg text-[#334E68] hover:bg-[#F4FAF9] transition-colors"
           aria-label="Toggle menu"
         >
           {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -125,31 +125,31 @@ export default function Navbar() {
       {mobileOpen && (
         <>
           <div
-            className="md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+            className="md:hidden fixed inset-0 z-40 bg-[#102A43]/40 backdrop-blur-sm"
             onClick={closeMobile}
           />
           
-          <div className="md:hidden fixed top-14 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-xl">
+          <div className="md:hidden fixed top-14 left-0 right-0 z-50 bg-white border-b border-[#E2ECEB] shadow-xl">
             <nav className="px-3 py-3 space-y-1">
               {navItems.map((item) => (
                 <NavLink key={item.to} item={item} onClick={closeMobile} />
               ))}
             </nav>
-            <div className="px-3 py-3 border-t border-gray-100">
+            <div className="px-3 py-3 border-t border-[#E2ECEB]">
               <div className="flex items-center gap-3 px-3 py-2 mb-2">
-                <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
-                  <span className="text-sm font-semibold text-teal-700">
+                <div className="w-8 h-8 rounded-full bg-[#F4FAF9] border border-[#E2ECEB] flex items-center justify-center">
+                  <span className="text-sm font-semibold text-[#0F9D92]">
                     {user?.name?.[0]?.toUpperCase() || 'U'}
                   </span>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">{user?.name || 'User'}</p>
-                  <p className="text-xs text-gray-500">{user?.email || ''}</p>
+                  <p className="text-sm font-semibold text-[#102A43]">{user?.name || 'User'}</p>
+                  <p className="text-xs text-[#627D98]">{user?.email || ''}</p>
                 </div>
               </div>
               <button
                 onClick={handleLogout}
-                className="nav-link w-full text-red-600 hover:bg-red-50 hover:text-red-700"
+                className="nav-link w-full text-rose-600 hover:bg-rose-50 hover:text-rose-700"
               >
                 <LogOut className="h-5 w-5" />
                 <span>Logout</span>
