@@ -68,6 +68,7 @@ app.get('/', (req, res) => {
 });
 
 const { getSmtpDiagnosticStatus, verifySmtpOnStartup } = require('./config/emailService');
+const { normalizeAiUrl } = require('./controllers/screeningController');
 
 app.get('/health', async (req, res) => {
   const isConnected = mongoose.connection.readyState === 1;
@@ -80,6 +81,7 @@ app.get('/health', async (req, res) => {
     database: isConnected ? 'connected' : 'disconnected',
     databaseName: isConnected && mongoose.connection.db ? mongoose.connection.db.databaseName : null,
     readyState: mongoose.connection.readyState,
+    aiServiceUrl: normalizeAiUrl(process.env.AI_SERVICE_URL),
     email: {
       provider: emailDiag.provider,
       configured: emailDiag.configured,

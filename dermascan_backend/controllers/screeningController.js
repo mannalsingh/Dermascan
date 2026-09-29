@@ -68,13 +68,32 @@ exports.uploadScreening = async (req, res, next) => {
     const filePath = req.file.path;
     const imageUrl = `/uploads/${req.file.filename}`;
 
-    // 3. Normalize AI service URL and log safely
-    const rawAiUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
-    let cleanAiUrl = rawAiUrl.trim();
-    if (!/^https?:\/\//i.test(cleanAiUrl)) {
-      cleanAiUrl = cleanAiUrl.includes('.onrender.com') ? `https://${cleanAiUrl}` : `http://${cleanAiUrl}`;
+const normalizeAiUrl = (raw) => {
+  let url = (raw || 'http://localhost:8000').trim().replace(/\/+$/, '');
+
+  // If it's a bare Render service name (e.g., 'dermascan-ai-service-9e8e' or 'http://dermascan-ai-service-9e8e')
+  if (url.includes('dermascan-ai-service') && !url.includes('.onrender.com')) {
+    url = url.replace(/^https?:\/\//i, '');
+    return `https://${url}.onrender.com`;
+  }
+
+  if (!/^https?:\/\//i.test(url)) {
+    if (url.includes('.onrender.com')) {
+      return `https://${url}`;
     }
-    const aiPredictUrl = `${cleanAiUrl.replace(/\/+$/, '')}/predict`;
+    return `http://${url}`;
+  }
+
+  if (url.startsWith('http://') && url.includes('.onrender.com')) {
+    return url.replace('http://', 'https://');
+  }
+
+  return url;
+};
+
+// 3. Normalize AI service URL and log safely
+    const cleanAiUrl = normalizeAiUrl(process.env.AI_SERVICE_URL);
+    const aiPredictUrl = `${cleanAiUrl}/predict`;
     console.log(`[AI Service] Sending screening image to endpoint: ${aiPredictUrl}`);
 
     // 4. Call AI prediction service
@@ -150,7 +169,7 @@ exports.uploadScreening = async (req, res, next) => {
       });
     }
 
-    const aiServicePublicUrl = process.env.AI_SERVICE_PUBLIC_URL || cleanAiUrl.replace(/\/+$/, '');
+    const aiServicePublicUrl = normalizeAiUrl(process.env.AI_SERVICE_PUBLIC_URL || cleanAiUrl);
     const finalHeatmapUrl = screeningResult.heatmap_url
       ? screeningResult.heatmap_url
           .replace('http://127.0.0.1:8000', aiServicePublicUrl)
@@ -593,3 +612,5 @@ exports.downloadReport = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.normalizeAiUrl = normalizeAiUrl;
