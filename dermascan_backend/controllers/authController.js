@@ -239,6 +239,7 @@ exports.verifyOtp = async (req, res, next) => {
 exports.register = async (req, res, next) => {
   try {
     const { name, email, password, role, otpToken } = req.body;
+    const cleanEmail = email ? email.toLowerCase().trim() : '';
     const mongoose = require('mongoose');
 
     // ── OTP session guard (MongoDB must be up to validate tokens) ──────────
@@ -255,7 +256,6 @@ exports.register = async (req, res, next) => {
         });
       }
 
-      const cleanEmail = email ? email.toLowerCase().trim() : '';
       if (
         decoded.type !== 'register' ||
         decoded.email !== cleanEmail ||
