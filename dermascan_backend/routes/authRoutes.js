@@ -51,7 +51,7 @@ router.post('/login-initiate', validate(schemas.loginInitiate), loginInitiate);
 router.post('/login-complete', validate(schemas.loginComplete),  loginComplete);
 
 // ── Legacy single-step login (backward-compat) ──────────────────────────────
-router.post('/login',  login);
+router.post('/login', validate(schemas.login), login);
 
 // ── Google OAuth + 2FA OTP verification flow ─────────────────────────────────
 router.post('/google', googleLogin);

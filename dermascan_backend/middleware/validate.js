@@ -109,11 +109,12 @@ const schemas = {
  * @returns {import('express').RequestHandler}
  */
 const validate = (schema) => (req, res, next) => {
-  const { error } = schema.validate(req.body, { abortEarly: false });
+  const { error, value } = schema.validate(req.body, { abortEarly: false });
   if (error) {
     const messages = error.details.map((d) => d.message).join(', ');
     return res.status(422).json({ success: false, message: messages });
   }
+  req.body = value;
   next();
 };
 

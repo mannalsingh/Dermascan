@@ -144,6 +144,18 @@ exports.sendOtp = async (req, res, next) => {
       }
     }
 
+    // For register OTPs, verify the account does not already exist
+    if (type === 'register') {
+      if (mongoose.connection.readyState === 1) {
+        const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
+        if (existingUser) {
+          return res
+            .status(400)
+            .json({ success: false, message: 'User already exists' });
+        }
+      }
+    }
+
     await _generateAndSendOtp(email, type);
 
     return res
@@ -334,22 +346,23 @@ exports.login = async (req, res, next) => {
         .json({ success: false, message: 'Please provide an email and password' });
     }
 
+    const cleanEmail = email ? email.toLowerCase().trim() : '';
     const mongoose = require('mongoose');
 
     // ── Fallback store ──────────────────────────────────────────────────────
     if (mongoose.connection.readyState !== 1) {
-      let existingUser = fallbackStore.getUserByEmail(email);
+      let existingUser = fallbackStore.getUserByEmail(cleanEmail);
 
       if (existingUser) {
         if (existingUser.password && existingUser.password !== password) {
           return res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
       } else {
-        const cleanName = fallbackStore.cleanNameFromEmail(email);
+        const cleanName = fallbackStore.cleanNameFromEmail(cleanEmail);
         existingUser = fallbackStore.saveUser({
-          id: 'user_' + Buffer.from(email).toString('base64').substring(0, 8),
+          id: 'user_' + Buffer.from(cleanEmail).toString('base64').substring(0, 8),
           name: cleanName,
-          email,
+          email: cleanEmail,
           password,
           role: 'user',
         });
@@ -369,7 +382,7 @@ exports.login = async (req, res, next) => {
     }
 
     // ── MongoDB path ────────────────────────────────────────────────────────
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: cleanEmail });
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }

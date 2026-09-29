@@ -89,7 +89,7 @@ export default function RegisterPage() {
     } catch (err) {
       const msg = err.response?.data?.message || 'Registration failed. Please try again.'
       setError(msg)
-      setStep(2)
+      setStep(1)
     } finally {
       setLoading(false)
     }
