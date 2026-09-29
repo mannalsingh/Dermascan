@@ -71,12 +71,49 @@ export const analyticsAPI = {
   getSummary: () => api.get('/api/analytics/summary'),
 }
 
+export const resolveImageUrl = (url) => {
+  if (!url) return null
+  if (url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://')) {
+    return url
+  }
+  const cleanPath = url.startsWith('/') ? url : `/${url}`
+  if (BASE_URL && BASE_URL.trim() !== '') {
+    return `${BASE_URL.replace(/\/+$/, '')}${cleanPath}`
+  }
+  if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
+    return `https://dermascan-backend-5x5b.onrender.com${cleanPath}`
+  }
+  return cleanPath
+}
+
 export const resolveHeatmapUrl = (url) => {
   if (!url) return null
-  
+  if (url.startsWith('data:') || url.startsWith('blob:')) return url
+
+  const isLocalClient = typeof window !== 'undefined' && (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1'))
+
+  if (url.includes('/heatmaps/')) {
+    const filename = url.split('/heatmaps/').pop()
+    if (filename && filename !== url) {
+      if (isLocalClient) {
+        return `http://localhost:8000/heatmaps/${filename}`
+      }
+      return `https://dermascan-ai-service-9e8e.onrender.com/heatmaps/${filename}`
+    }
+  }
+
+  if (url.startsWith('http://') && url.includes('.onrender.com')) {
+    return url.replace('http://', 'https://')
+  }
+
+  if (isLocalClient) {
+    return url
+      .replace('http://127.0.0.1:8000', 'http://localhost:8000')
+      .replace(/http:\/\/\d+\.\d+\.\d+\.\d+:8000/, 'http://localhost:8000')
+  }
+
   return url
-    .replace('http://127.0.0.1:8000', 'http://localhost:8000')
-    .replace(/http:\/\/\d+\.\d+\.\d+\.\d+:8000/, 'http://localhost:8000')
 }
 
 export default api
+

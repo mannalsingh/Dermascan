@@ -39,6 +39,42 @@ const normalizeAiUrl = (raw) => {
   return url;
 };
 
+const getBackendOrigin = (req) => {
+  if (process.env.RENDER_EXTERNAL_URL) {
+    return process.env.RENDER_EXTERNAL_URL.replace(/\/+$/, '');
+  }
+  const proto = (req && (req.headers?.['x-forwarded-proto'] || req.protocol)) || 'http';
+  const host = (req && req.get && req.get('host')) || 'localhost:5000';
+  return `${proto}://${host}`.replace(/\/+$/, '');
+};
+
+const resolveImagePublicUrl = (rawImageUrl, req) => {
+  if (!rawImageUrl) return '';
+  if (rawImageUrl.startsWith('http://') || rawImageUrl.startsWith('https://')) {
+    return rawImageUrl;
+  }
+  const origin = getBackendOrigin(req);
+  const cleanPath = rawImageUrl.startsWith('/') ? rawImageUrl : `/${rawImageUrl}`;
+  return `${origin}${cleanPath}`;
+};
+
+const resolveHeatmapPublicUrl = (rawHeatmapUrl, cleanAiUrl) => {
+  if (!rawHeatmapUrl) return '';
+  const aiBase = normalizeAiUrl(cleanAiUrl || process.env.AI_SERVICE_PUBLIC_URL || process.env.AI_SERVICE_URL);
+
+  if (rawHeatmapUrl.includes('/heatmaps/')) {
+    const filename = rawHeatmapUrl.split('/heatmaps/').pop();
+    if (filename && filename !== rawHeatmapUrl) {
+      return `${aiBase}/heatmaps/${filename}`;
+    }
+  }
+
+  return rawHeatmapUrl
+    .replace('http://127.0.0.1:8000', aiBase)
+    .replace('http://localhost:8000', aiBase)
+    .replace(/http:\/\/\d+\.\d+\.\d+\.\d+:8000/, aiBase);
+};
+
 exports.uploadScreening = async (req, res, next) => {
   try {
     if (!req.file) {
@@ -169,13 +205,8 @@ exports.uploadScreening = async (req, res, next) => {
       });
     }
 
-    const aiServicePublicUrl = normalizeAiUrl(process.env.AI_SERVICE_PUBLIC_URL || cleanAiUrl);
-    const finalHeatmapUrl = screeningResult.heatmap_url
-      ? screeningResult.heatmap_url
-          .replace('http://127.0.0.1:8000', aiServicePublicUrl)
-          .replace('http://localhost:8000', aiServicePublicUrl)
-          .replace('http://10.50.204.176:8000', aiServicePublicUrl)
-      : '';
+    const finalHeatmapUrl = resolveHeatmapPublicUrl(screeningResult.heatmap_url, cleanAiUrl);
+    const fullImageUrl = resolveImagePublicUrl(screening.image_url, req);
 
     return res.status(201).json({
       success: true,
@@ -186,6 +217,7 @@ exports.uploadScreening = async (req, res, next) => {
         confidenceScore: screeningResult.confidence_score,
         riskLevel: screeningResult.risk_level,
         heatmapUrl: finalHeatmapUrl,
+        imageUrl: fullImageUrl,
         createdAt: screening.uploaded_at || new Date().toISOString()
       }
     });
@@ -242,7 +274,7 @@ exports.getHistory = async (req, res, next) => {
       const resVal = s.result || {};
       return {
         screeningId: s._id,
-        imageUrl: s.image_url,
+        imageUrl: resolveImagePublicUrl(s.image_url, req),
         prediction: resVal.prediction || 'benign',
         confidenceScore: resVal.confidence_score || 0.0,
         riskLevel: resVal.risk_level || 'low',
@@ -288,21 +320,13 @@ exports.getScreeningById = async (req, res, next) => {
 
     const result = await ScreeningResult.findOne({ screening_id: screening._id });
 
-    const aiServicePublicUrl = process.env.AI_SERVICE_PUBLIC_URL || process.env.AI_SERVICE_URL || 'http://localhost:8000';
-    const cleanPublicUrl = aiServicePublicUrl.replace(/\/+$/, '');
-
     const formattedResult = result ? {
       resultId: result._id,
       screeningId: result.screening_id,
       prediction: result.prediction,
       confidenceScore: result.confidence_score,
       riskLevel: result.risk_level,
-      heatmapUrl: result.heatmap_url
-        ? result.heatmap_url
-            .replace('http://127.0.0.1:8000', cleanPublicUrl)
-            .replace('http://localhost:8000', cleanPublicUrl)
-            .replace('http://10.50.204.176:8000', cleanPublicUrl)
-        : '',
+      heatmapUrl: resolveHeatmapPublicUrl(result.heatmap_url),
       createdAt: result.created_at || new Date().toISOString()
     } : null;
 
@@ -311,7 +335,7 @@ exports.getScreeningById = async (req, res, next) => {
       success: true,
       screening: {
         screeningId: screening._id,
-        imageUrl: screening.image_url,
+        imageUrl: resolveImagePublicUrl(screening.image_url, req),
         uploadedAt: screening.uploaded_at,
         status: screening.status,
         result: formattedResult

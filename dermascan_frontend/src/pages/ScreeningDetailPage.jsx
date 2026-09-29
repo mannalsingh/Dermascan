@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { screeningAPI, resolveHeatmapUrl } from '../api/axios'
+import { screeningAPI, resolveHeatmapUrl, resolveImageUrl } from '../api/axios'
 import Layout from '../components/Layout'
 import LoadingSpinner from '../components/LoadingSpinner'
 import RiskBadge, { PredictionBadge } from '../components/RiskBadge'
@@ -23,8 +23,13 @@ export default function ScreeningDetailPage() {
     screeningAPI.getById(id)
       .then((r) => {
         const s = r.data?.screening
-        if (s?.result?.heatmapUrl) {
-          s.result.heatmapUrl = resolveHeatmapUrl(s.result.heatmapUrl)
+        if (s) {
+          if (s.imageUrl) {
+            s.imageUrl = resolveImageUrl(s.imageUrl)
+          }
+          if (s.result?.heatmapUrl) {
+            s.result.heatmapUrl = resolveHeatmapUrl(s.result.heatmapUrl)
+          }
         }
         setData(s)
       })
@@ -122,7 +127,7 @@ export default function ScreeningDetailPage() {
             <div className="bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center min-h-48">
               {data.imageUrl ? (
                 <img
-                  src={data.imageUrl}
+                  src={resolveImageUrl(data.imageUrl)}
                   alt="Original lesion"
                   className="w-full object-contain max-h-64"
                 />
@@ -142,7 +147,7 @@ export default function ScreeningDetailPage() {
             <div className="bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center min-h-48">
               {result?.heatmapUrl && !heatmapError ? (
                 <img
-                  src={result.heatmapUrl}
+                  src={resolveHeatmapUrl(result.heatmapUrl)}
                   alt="Lesion heatmap"
                   className="w-full object-contain max-h-64"
                   onError={() => setHeatmapError(true)}
