@@ -16,6 +16,29 @@ if (!fs.existsSync(reportsDir)) {
   fs.mkdirSync(reportsDir, { recursive: true });
 }
 
+const normalizeAiUrl = (raw) => {
+  let url = (raw || 'http://localhost:8000').trim().replace(/\/+$/, '');
+
+  // If it's a bare Render service name (e.g., 'dermascan-ai-service-9e8e' or 'http://dermascan-ai-service-9e8e')
+  if (url.includes('dermascan-ai-service') && !url.includes('.onrender.com')) {
+    url = url.replace(/^https?:\/\//i, '');
+    return `https://${url}.onrender.com`;
+  }
+
+  if (!/^https?:\/\//i.test(url)) {
+    if (url.includes('.onrender.com')) {
+      return `https://${url}`;
+    }
+    return `http://${url}`;
+  }
+
+  if (url.startsWith('http://') && url.includes('.onrender.com')) {
+    return url.replace('http://', 'https://');
+  }
+
+  return url;
+};
+
 exports.uploadScreening = async (req, res, next) => {
   try {
     if (!req.file) {
@@ -68,30 +91,7 @@ exports.uploadScreening = async (req, res, next) => {
     const filePath = req.file.path;
     const imageUrl = `/uploads/${req.file.filename}`;
 
-const normalizeAiUrl = (raw) => {
-  let url = (raw || 'http://localhost:8000').trim().replace(/\/+$/, '');
-
-  // If it's a bare Render service name (e.g., 'dermascan-ai-service-9e8e' or 'http://dermascan-ai-service-9e8e')
-  if (url.includes('dermascan-ai-service') && !url.includes('.onrender.com')) {
-    url = url.replace(/^https?:\/\//i, '');
-    return `https://${url}.onrender.com`;
-  }
-
-  if (!/^https?:\/\//i.test(url)) {
-    if (url.includes('.onrender.com')) {
-      return `https://${url}`;
-    }
-    return `http://${url}`;
-  }
-
-  if (url.startsWith('http://') && url.includes('.onrender.com')) {
-    return url.replace('http://', 'https://');
-  }
-
-  return url;
-};
-
-// 3. Normalize AI service URL and log safely
+    // 3. Normalize AI service URL and log safely
     const cleanAiUrl = normalizeAiUrl(process.env.AI_SERVICE_URL);
     const aiPredictUrl = `${cleanAiUrl}/predict`;
     console.log(`[AI Service] Sending screening image to endpoint: ${aiPredictUrl}`);
