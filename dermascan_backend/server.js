@@ -78,6 +78,7 @@ app.get('/health', async (req, res) => {
       ? 'DermaScan AI backend is running and connected to database'
       : 'DermaScan AI backend is running but database is disconnected',
     database: isConnected ? 'connected' : 'disconnected',
+    databaseName: isConnected && mongoose.connection.db ? mongoose.connection.db.databaseName : null,
     readyState: mongoose.connection.readyState,
     email: {
       provider: emailDiag.provider,

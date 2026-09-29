@@ -300,12 +300,12 @@ exports.register = async (req, res, next) => {
     }
 
     // ── MongoDB path ────────────────────────────────────────────────────────
-    let user = await User.findOne({ email });
+    let user = await User.findOne({ email: cleanEmail });
     if (user) {
       return res.status(400).json({ success: false, message: 'User already exists' });
     }
 
-    user = await User.create({ name, email, password, role });
+    user = await User.create({ name: name.trim(), email: cleanEmail, password, role });
     await UserProfile.create({ user_id: user._id });
 
     const token = generateToken({

@@ -14,6 +14,7 @@ const connectDB = async () => {
 
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
       serverSelectionTimeoutMS: 10000,
+      dbName: process.env.DB_NAME || 'dermascan',
     });
     console.log(`[MongoDB] Connected to database: ${conn.connection.name} on ${conn.connection.host}`);
   } catch (error) {
