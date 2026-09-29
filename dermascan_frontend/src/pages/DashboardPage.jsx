@@ -9,6 +9,7 @@ import {
   Upload, History, BarChart2, ShieldCheck, Activity,
   TrendingUp, AlertTriangle, CheckCircle, ArrowRight, Scan
 } from 'lucide-react'
+import { formatIST } from '../utils/dateUtils'
 
 function StatCard({ icon: Icon, label, value, sub, color = 'teal' }) {
   const colors = {
@@ -186,10 +187,7 @@ export default function DashboardPage() {
                     <RiskBadge level={item.riskLevel} />
                   </div>
                   <p className="text-xs text-[#829AB1] mt-1">
-                    {new Date(item.uploadedAt).toLocaleDateString('en-IN', {
-                      day: 'numeric', month: 'short', year: 'numeric',
-                      hour: '2-digit', minute: '2-digit'
-                    })}
+                    {formatIST(item.uploadedAt)}
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0">

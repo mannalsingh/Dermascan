@@ -7,6 +7,7 @@ import RiskBadge, { PredictionBadge } from '../components/RiskBadge'
 import {
   History, Scan, Upload, Search, Filter, ChevronRight, Calendar
 } from 'lucide-react'
+import { formatIST } from '../utils/dateUtils'
 
 const ITEMS_PER_PAGE = 10
 
@@ -134,10 +135,7 @@ export default function HistoryPage() {
                 </div>
                 <div className="flex items-center gap-1 text-xs text-gray-400">
                   <Calendar className="h-3 w-3" />
-                  {new Date(item.uploadedAt).toLocaleDateString('en-IN', {
-                    day: 'numeric', month: 'short', year: 'numeric',
-                    hour: '2-digit', minute: '2-digit'
-                  })}
+                  {formatIST(item.uploadedAt)}
                 </div>
               </div>
 

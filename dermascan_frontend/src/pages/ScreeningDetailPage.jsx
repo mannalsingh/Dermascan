@@ -8,6 +8,7 @@ import {
   ArrowLeft, Download, AlertTriangle, CheckCircle,
   Calendar, Scan, Info, Image as ImageIcon
 } from 'lucide-react'
+import { formatIST } from '../utils/dateUtils'
 
 export default function ScreeningDetailPage() {
   const { id } = useParams()
@@ -108,10 +109,7 @@ export default function ScreeningDetailPage() {
 
           <div className="flex items-center gap-2 text-sm text-gray-500 mt-3">
             <Calendar className="h-4 w-4" />
-            {new Date(data.uploadedAt || data.createdAt).toLocaleDateString('en-IN', {
-              weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-              hour: '2-digit', minute: '2-digit'
-            })}
+            {formatIST(data.uploadedAt || data.createdAt)}
           </div>
         </div>
 
